@@ -1,0 +1,2 @@
+"""Configurações e segurança."""
+

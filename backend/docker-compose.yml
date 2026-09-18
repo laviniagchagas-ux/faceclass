@@ -1,0 +1,39 @@
+services:
+  db:
+    image: mysql:8.4
+    container_name: faceclass-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: face_class
+      MYSQL_USER: faceclass
+      MYSQL_PASSWORD: faceclass
+      MYSQL_ROOT_PASSWORD: rootfaceclass
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootfaceclass"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - faceclass_mysql_data:/var/lib/mysql
+      - ./database/01_schema_faceclass.sql:/docker-entrypoint-initdb.d/01_schema_faceclass.sql:ro
+
+  api:
+    build: .
+    container_name: faceclass-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql+pymysql://faceclass:faceclass@db:3306/face_class
+      JWT_SECRET: troque-esta-chave-antes-de-publicar
+      DEMO_MODE: "true"
+      DEMO_FACE_TOKEN: faceclass-demo-ok
+      ALLOW_BOOTSTRAP_ADMIN: "true"
+    ports:
+      - "8000:8000"
+
+volumes:
+  faceclass_mysql_data:

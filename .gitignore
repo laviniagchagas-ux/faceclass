@@ -1,0 +1,32 @@
+# Segredos e configurações específicas de cada computador
+.env
+**/.env
+local.properties
+**/local.properties
+*.keystore
+*.jks
+
+# Python
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Android Studio, Gradle e arquivos gerados
+.idea/
+**/.idea/
+.gradle/
+**/.gradle/
+build/
+**/build/
+*.iml
+android/gradle/gradle-daemon-jvm.properties
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+
+android/.gradle-user/
