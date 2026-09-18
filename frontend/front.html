@@ -1,0 +1,1954 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>FaceClass</title>
+<style>
+  :root {
+    --primary: #6B46C1;
+    --primary-dark: #553C9A;
+    --primary-light: #F3E8FF;
+    --bg: #F8F9FE;
+    --card: #FFFFFF;
+    --text: #2D3748;
+    --subtext: #718096;
+    --green: #38A169;
+    --green-bg: #C6F6D5;
+    --red: #E53E3E;
+    --red-bg: #FED7D7;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  body {
+    background-color: #1A202C;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+  }
+
+  button, .btn-primary, .btn-secondary, .action-banner, .nav-item, .login-tab, .teacher-day-btn, .student-week-day-btn, .card-footer-link, .notif-badge {
+    cursor: pointer !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  #app {
+    width: 100%;
+    max-width: 420px;
+    height: 100vh;
+    height: 100dvh;
+    background-color: var(--bg);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  @media (min-width: 640px) {
+    #app {
+      height: 840px;
+      border-radius: 36px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  .screen {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+    padding-bottom: 70px;
+  }
+
+  .screen.active {
+    display: flex;
+  }
+
+  .top-header {
+    background-color: var(--primary);
+    color: #FFF;
+    padding: 20px 20px 35px 20px;
+    border-bottom-left-radius: 28px;
+    border-bottom-right-radius: 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 20px;
+    font-weight: 800;
+  }
+
+  .notif-badge {
+    position: relative;
+    background: rgba(255,255,255,0.2);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .main-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .user-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+  }
+
+  .user-header h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .user-header p {
+    font-size: 12px;
+    color: var(--subtext);
+    margin-top: 2px;
+  }
+
+  .avatar {
+    width: 48px;
+    height: 48px;
+    background-color: var(--primary-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    font-weight: bold;
+  }
+
+  .action-banner {
+    background: linear-gradient(135deg, #6B46C1 0%, #553C9A 100%);
+    border-radius: 20px;
+    padding: 20px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 10px 20px rgba(107, 70, 193, 0.25);
+    transition: transform 0.15s ease;
+  }
+
+  .action-banner:active {
+    transform: scale(0.97);
+  }
+
+  .action-banner.disabled {
+    background: linear-gradient(135deg, #A0AEC0 0%, #718096 100%);
+    box-shadow: none;
+  }
+
+  .action-banner-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .action-icon-box {
+    width: 46px;
+    height: 46px;
+    border: 2px dashed rgba(255, 255, 255, 0.8);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    transition: background-color 0.3s ease, border 0.3s ease;
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+
+  .card-status-present {
+    background-color: #F0FFF4 !important;
+    border: 2px solid var(--green) !important;
+  }
+
+  .status-badge-green {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--green-bg);
+    color: #22543D;
+    font-weight: 800;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+  }
+
+  .notice-item {
+    background: #FFFFFF;
+    border: 1px solid #E9D8FD;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  .notice-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .notice-tag {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .tag-prova { background: #FED7D7; color: #9B2C2C; }
+  .tag-evento { background: #C6F6D5; color: #22543D; }
+  .tag-recado { background: #EBF8FF; color: #2B6CB0; }
+
+  .notice-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .notice-desc {
+    font-size: 12px;
+    color: var(--subtext);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  .notice-meta {
+    font-size: 10px;
+    color: #A0AEC0;
+    margin-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #F7FAFC;
+    padding-top: 6px;
+  }
+
+  .freq-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .donut-chart {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: conic-gradient(var(--primary) 0% 0%, #E9D8FD 0% 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.5s ease;
+  }
+
+  .donut-inner {
+    width: 72px;
+    height: 72px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .donut-percent {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .donut-label {
+    font-size: 9px;
+    color: var(--subtext);
+  }
+
+  .freq-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .stat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--subtext);
+  }
+
+  .stat-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .stat-number {
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .card-footer-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #EDF2F7;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .teacher-days {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-bottom: 12px;
+    padding: 4px;
+    background: #EDF2F7;
+    border-radius: 12px;
+  }
+
+  .teacher-day-btn {
+    border: none;
+    background: transparent;
+    color: var(--subtext);
+    border-radius: 9px;
+    padding: 9px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    transition: all 0.15s ease;
+  }
+
+  .teacher-day-btn.active {
+    background: var(--card);
+    color: var(--primary);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+
+  .teacher-day-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .history-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .check-icon {
+    width: 38px;
+    height: 38px;
+    background: #E6FFFA;
+    color: #319795;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 260px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .history-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #F7FAFC;
+    border: 1px solid #EDF2F7;
+    font-size: 12px;
+  }
+
+  .badge-presente {
+    background: var(--green-bg);
+    color: #22543D;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 800;
+    font-size: 11px;
+  }
+
+  .badge-falta {
+    background: var(--red-bg);
+    color: #9B2C2C;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 800;
+    font-size: 11px;
+  }
+
+  .bottom-nav {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 65px;
+    background: #FFFFFF;
+    border-top: 1px solid #EDF2F7;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 100;
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--subtext);
+    border: none;
+    background: none;
+    width: 20%;
+  }
+
+  .nav-item.active {
+    color: var(--primary);
+    font-weight: 700;
+  }
+
+  .nav-item svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+  }
+
+  .login-tabs {
+    display: flex;
+    background: #EDF2F7;
+    border-radius: 14px;
+    padding: 4px;
+    margin-bottom: 20px;
+  }
+
+  .login-tab {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--subtext);
+    border-radius: 10px;
+    transition: all 0.15s ease;
+  }
+
+  .login-tab.active {
+    background: var(--card);
+    color: var(--primary);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+
+  .input {
+    width: 100%;
+    height: 46px;
+    padding: 0 14px;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    font-size: 14px;
+    outline: none;
+    margin-top: 4px;
+  }
+
+  select.input {
+    height: 46px;
+  }
+
+  textarea.input {
+    height: 80px;
+    padding: 10px 14px;
+    resize: none;
+  }
+
+  .btn-primary {
+    width: 100%;
+    height: 50px;
+    background-color: var(--primary);
+    color: #FFFFFF;
+    border: none;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: 0 8px 15px rgba(107, 70, 193, 0.2);
+  }
+
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+
+  .btn-secondary {
+    width: 100%;
+    height: 45px;
+    background-color: #FED7D7;
+    color: var(--red);
+    border: none;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 10px;
+  }
+
+  .btn-link-action {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    width: 100%;
+    margin-top: 12px;
+    text-decoration: underline;
+  }
+
+  .camera-container {
+    width: 220px;
+    height: 220px;
+    margin: 20px auto;
+    border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+    background: #000;
+    border: 4px solid var(--primary);
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+  }
+
+  #webcam {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+    -webkit-transform: scaleX(-1);
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--primary-dark);
+    color: #FFF;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+    opacity: 0;
+    z-index: 999;
+    text-align: center;
+    max-width: 90%;
+  }
+
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  .student-week-wrap{margin-top:0}
+  .student-week-days{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 10px}
+  .student-week-days::-webkit-scrollbar{display:none}
+  .student-week-day-btn{flex:1;min-width:52px;border:1px solid #e5e7eb;background:#fff;border-radius:10px;padding:9px 6px;font-weight:700;font-size:12px}
+  .student-week-day-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .student-week-title{font-size:16px;font-weight:800;margin:4px 0 10px;color:var(--text)}
+  .student-class-list{display:flex;flex-direction:column;gap:8px}
+  .student-class-row{display:flex;align-items:center;gap:10px;padding:11px;border:1px solid #e5e7eb;border-radius:12px;background:#fff}
+  .student-class-time{font-weight:800;font-size:13px;min-width:48px;color:var(--primary)}
+  .student-class-info{flex:1;min-width:0}
+  .student-class-name{font-weight:700;font-size:13px;color:var(--text)}
+  .student-class-room{font-size:11px;opacity:.8;margin-top:2px;color:var(--subtext)}
+  .student-class-absent{border-color:#ef4444;background:#fff1f2}
+  .student-absence-badge{font-size:10px;font-weight:800;color:#b91c1c;background:#fecdd3;border-radius:999px;padding:5px 8px;white-space:nowrap}
+  .student-interval{justify-content:center;background:#F3E8FF;border-style:dashed;font-size:11px;font-weight:700;color:var(--primary)}
+  .student-alerts{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  .student-alert{display:flex;gap:10px;align-items:flex-start;padding:11px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;font-size:12px}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- TELA 1: LOGIN -->
+  <section id="screen-login" class="screen active" style="padding-bottom: 0;">
+    <div class="top-header" style="height: 180px; align-items: flex-start; padding-top: 40px;">
+      <div class="brand-logo">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
+        <span>FaceClass</span>
+      </div>
+    </div>
+
+    <div class="main-content" style="margin-top: -50px;">
+      <div class="card">
+        <h2 style="font-size: 20px; font-weight: 800; color: var(--text);" id="login-card-title">Entrar</h2>
+        <p style="font-size: 12px; color: var(--subtext); margin-bottom: 16px;" id="login-card-sub">Selecione o tipo de acesso</p>
+
+        <div class="login-tabs">
+          <button type="button" class="login-tab active" id="tab-aluno">Aluno</button>
+          <button type="button" class="login-tab" id="tab-professor">Professor</button>
+          <button type="button" class="login-tab" id="tab-responsavel">Responsável</button>
+        </div>
+
+        <form id="login-form">
+          <!-- CAMPOS ALUNO -->
+          <div id="fields-aluno">
+            <div style="margin-bottom: 14px;">
+              <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">RA do Aluno</label>
+              <input id="login-ra" type="text" inputmode="numeric" placeholder="000000000000-0" maxlength="14" value="000114073260-2" class="input">
+            </div>
+            <div style="margin-bottom: 20px;">
+              <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">Senha</label>
+              <input id="login-password-aluno" type="password" value="@Hugon2025" class="input">
+            </div>
+          </div>
+
+          <!-- CAMPOS PROFESSOR -->
+          <div id="fields-professor" style="display: none;">
+            <div style="margin-bottom: 14px;">
+              <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">Gmail do Professor</label>
+              <input id="login-gmail" type="email" placeholder="antoniocatine@gmail.com" value="antoniocatine@gmail.com" class="input">
+            </div>
+            <div style="margin-bottom: 20px;">
+              <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">Senha</label>
+              <input id="login-password-professor" type="password" value="Prof@2025" class="input">
+            </div>
+          </div>
+
+          <!-- CAMPOS RESPONSÁVEL (LOGIN OU CADASTRO) -->
+          <div id="fields-responsavel" style="display: none;">
+            <!-- MODO LOGIN -->
+            <div id="resp-mode-login">
+              <div style="margin-bottom: 14px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">E-mail do Responsável</label>
+                <input id="login-email-responsavel" type="email" placeholder="responsavel.juju@gmail.com" value="responsavel.juju@gmail.com" class="input">
+              </div>
+              <div style="margin-bottom: 20px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">Senha</label>
+                <input id="login-password-responsavel" type="password" value="@Familia2025" class="input">
+              </div>
+            </div>
+
+            <!-- MODO CADASTRO DE RESPONSÁVEL -->
+            <div id="resp-mode-register" style="display: none;">
+              <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">Gmail do Responsável</label>
+                <input id="reg-email-responsavel" type="email" placeholder="seu.gmail@gmail.com" class="input">
+              </div>
+              <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">RA do Aluno</label>
+                <input id="reg-ra-aluno" type="text" inputmode="numeric" placeholder="000000000000-0" maxlength="14" class="input">
+              </div>
+              <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">Criar Senha</label>
+                <input id="reg-password" type="password" placeholder="Sua senha" class="input">
+              </div>
+              <div style="margin-bottom: 20px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">Confirmar Senha</label>
+                <input id="reg-password-confirm" type="password" placeholder="Confirme a senha" class="input">
+              </div>
+            </div>
+          </div>
+
+          <p id="login-error" style="color: var(--red); font-size: 12px; display: none; margin-bottom: 10px;"></p>
+          <button type="submit" class="btn-primary" id="btn-submit-login">Entrar na Conta</button>
+          <button type="button" class="btn-link-action" id="btn-toggle-parent-mode" style="display: none;">Criar conta de Responsável</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- TELA 1B: HUB DO PROFESSOR -->
+  <section id="screen-teacher-hub" class="screen">
+    <div class="top-header">
+      <div class="brand-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>FaceClass</span>
+      </div>
+      <div></div>
+    </div>
+    <div class="main-content">
+      <div class="user-header">
+        <div>
+          <h2 id="hub-teacher-name">Olá, Professor!</h2>
+          <p>Painel de Gestão</p>
+        </div>
+        <div class="avatar" id="teacher-avatar-initials">AC</div>
+      </div>
+
+      <div class="login-tabs">
+        <button type="button" class="login-tab active" id="tab-teacher-aulas">Grade de Aulas</button>
+        <button type="button" class="login-tab" id="tab-teacher-avisos">Quadro de Avisos</button>
+      </div>
+
+      <div id="teacher-view-aulas" class="card">
+        <div class="card-title">Minha Grade de Aulas</div>
+        <div class="teacher-days" id="teacher-days">
+          <button type="button" class="teacher-day-btn active" data-day="Seg">Seg</button>
+          <button type="button" class="teacher-day-btn" data-day="Ter">Ter</button>
+          <button type="button" class="teacher-day-btn" data-day="Qua">Qua</button>
+          <button type="button" class="teacher-day-btn" data-day="Qui">Qui</button>
+          <button type="button" class="teacher-day-btn" data-day="Sex">Sex</button>
+        </div>
+        <div style="font-size:11px; color:var(--subtext); margin-bottom:10px; padding:8px 10px; background:#F7FAFC; border-radius:10px;">
+          Intervalo: <strong>10:20 às 10:40</strong>
+        </div>
+        <div id="teacher-day-title" class="teacher-day-title">Segunda-feira</div>
+        <div id="teacher-schedule-list"></div>
+      </div>
+
+      <div id="teacher-view-avisos" style="display: none; flex-direction: column; gap: 16px;">
+        <div class="card" style="border-top: 4px solid var(--primary);">
+          <div class="card-title">📢 Novo Aviso no Quadro</div>
+          <form id="notice-form">
+            <div style="margin-bottom: 10px;">
+              <label style="font-size: 11px; font-weight: 700; color: var(--subtext);">Tipo de Aviso</label>
+              <select id="notice-type" class="input">
+                <option value="prova">📝 Prova / Avaliação</option>
+                <option value="evento">🎉 Evento Escolar</option>
+                <option value="recado">📌 Recado Importante</option>
+              </select>
+            </div>
+            <div style="margin-bottom: 10px;">
+              <label style="font-size: 11px; font-weight: 700; color: var(--subtext);">Título do Aviso</label>
+              <input id="notice-title" type="text" placeholder="Ex: Prova Regimental de ADS" class="input">
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="font-size: 11px; font-weight: 700; color: var(--subtext);">Descrição / Detalhes</label>
+              <textarea id="notice-desc" placeholder="Ex: Conteúdo dos Capítulos 1 a 4." class="input"></textarea>
+            </div>
+            <button type="submit" class="btn-primary" style="height: 42px; font-size: 13px;">Publicar no Quadro do Aluno</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Avisos Publicados</div>
+          <div id="teacher-notices-list"></div>
+        </div>
+      </div>
+
+      <button type="button" class="btn-secondary" id="teacher-logout-btn" style="background-color: var(--primary-light); color: var(--primary);">Sair</button>
+    </div>
+  </section>
+
+  <!-- TELA 1C: HUB DO RESPONSÁVEL -->
+  <section id="screen-parent-hub" class="screen">
+    <div class="top-header">
+      <div class="brand-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>FaceClass</span>
+      </div>
+      <div></div>
+    </div>
+    <div class="main-content">
+      <div class="user-header">
+        <div>
+          <h2 id="parent-hub-title">Olá, Responsável!</h2>
+          <p id="parent-hub-subtitle">Acompanhamento do aluno</p>
+        </div>
+        <div class="avatar" id="parent-avatar-initials">--</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Frequência Geral Escolar</div>
+        <div class="freq-container">
+          <div class="donut-chart" id="parent-donut-chart-bg">
+            <div class="donut-inner">
+              <span class="donut-percent" id="parent-freq-value">0%</span>
+              <span class="donut-label">presença</span>
+            </div>
+          </div>
+          <div class="freq-stats">
+            <div class="stat-row"><span class="stat-dot" style="background: var(--primary);"></span>Dias Presente: <span class="stat-number" id="parent-count-presencas">0</span></div>
+            <div class="stat-row"><span class="stat-dot" style="background: var(--red);"></span>Dias Ausente: <span class="stat-number" id="parent-count-faltas">0</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="parent-today-card">
+        <div class="card-title" style="margin-bottom: 8px;">Status de Hoje</div>
+        <div id="parent-today-status-container">
+          <p id="parent-today-status" style="font-size: 13px; color: var(--subtext);">Nenhum registro ainda hoje.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Histórico do 1º Bimestre</span>
+          <span style="font-size: 11px; color: var(--primary); font-weight: 700;" id="parent-total-days-badge">0 Dias letivos</span>
+        </div>
+        <div class="history-list" id="parent-bimestre-history"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Quadro de Avisos</div>
+        <div id="parent-notices-container"></div>
+      </div>
+
+      <button type="button" class="btn-secondary" id="parent-logout-btn" style="background-color: var(--primary-light); color: var(--primary);">Sair</button>
+    </div>
+  </section>
+
+  <!-- TELA 2: DASHBOARD ALUNO -->
+  <section id="screen-student-hub" class="screen">
+    <div class="top-header">
+      <div class="brand-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>FaceClass</span>
+      </div>
+      <div class="notif-badge" id="btn-notifications">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span id="notif-dot" style="display:none; position:absolute; top:4px; right:4px; width:9px; height:9px; background:var(--red); border-radius:50%; border:2px solid var(--primary);"></span>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="user-header">
+        <div>
+          <h2 id="hub-student-name">Olá, Aluno!</h2>
+          <p>Presença em tempo real.</p>
+        </div>
+        <div class="avatar" id="avatar-initials">AL</div>
+      </div>
+
+      <div class="action-banner" id="open-face-scan-btn">
+        <div class="action-banner-left">
+          <div class="action-icon-box">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M9 10h.01M15 10h.01M9 15c.5 1 1.5 2 3 2s2.5-1 3-2"/></svg>
+          </div>
+          <div>
+            <h3 id="banner-title">Registrar Presença Diária</h3>
+            <p id="banner-sub">Clique para biometria facial</p>
+          </div>
+        </div>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Frequência Geral de Dias</div>
+        <div class="freq-container">
+          <div class="donut-chart" id="donut-chart-bg">
+            <div class="donut-inner">
+              <span class="donut-percent" id="freq-value">0%</span>
+              <span class="donut-label">Presenças</span>
+            </div>
+          </div>
+          <div class="freq-stats">
+            <div class="stat-row">
+              <div class="stat-dot" style="background: var(--primary);"></div>
+              <span class="stat-number" id="count-presencas">0</span> Dias Presente
+            </div>
+            <div class="stat-row">
+              <div class="stat-dot" style="background: var(--red);"></div>
+              <span class="stat-number" id="count-faltas">0</span> Dias Faltou
+            </div>
+          </div>
+        </div>
+        
+        <button type="button" class="btn-secondary" id="btn-trigger-absence">Simular Falta do Dia (Notificar)</button>
+
+        <div class="card-footer-link" id="btn-details">
+          <span>Ver detalhes do relatório</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Último Registro Diário</div>
+        <div class="history-item">
+          <div class="history-left">
+            <div class="check-icon" id="hist-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+              <h5 style="font-size: 12px; font-weight: 700; color: var(--text);" id="hist-status">Aguardando registro</h5>
+              <p style="font-size: 10px; color: var(--subtext);">Chamada Facial Diária</p>
+            </div>
+          </div>
+          <div style="text-align: right; font-size: 10px; color: var(--subtext);">
+            <div id="hist-date">--/--/----</div>
+            <div id="hist-time">--:--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TELA DEDICADA: QUADRO DE AVISOS DO ALUNO -->
+  <section id="screen-avisos" class="screen">
+    <div class="top-header">
+      <span style="font-size: 18px; font-weight: 800;">Quadro de Avisos</span>
+      <div></div>
+    </div>
+    <div class="main-content">
+      <div class="card" style="border-top: 4px solid var(--primary);">
+        <div class="card-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <span>📌 Comunicados Escolares</span>
+          <span style="font-size: 10px; font-weight: 600; color: var(--subtext);">Postado por Professores</span>
+        </div>
+        <div id="student-notices-container"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TELA 3: AULAS DA SEMANA -->
+  <section id="screen-aulas" class="screen">
+    <div class="top-header">
+      <span style="font-size: 18px; font-weight: 800;">Matérias do Aluno</span>
+      <div></div>
+    </div>
+    <div class="main-content">
+      <div class="card student-week-wrap">
+        <div class="card-title">📚 Aulas da semana</div>
+        <div style="font-size:12px; color: var(--subtext); margin-bottom: 12px;">Grade com horários, professores e avisos de faltas.</div>
+        <div id="studentWeeklyClasses"></div>
+        <div id="studentAbsenceAlerts" class="student-alerts"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TELA 4: RELATÓRIOS -->
+  <section id="screen-relatorios" class="screen">
+    <div class="top-header">
+      <span style="font-size: 18px; font-weight: 800;">Dados e Relatório</span>
+      <div></div>
+    </div>
+    <div class="main-content">
+      <div class="card">
+        <div class="card-title">Responsável Vinculado</div>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+          <div><span style="color: var(--subtext);">Nome do Responsável:</span> <strong id="parent-name">--</strong></div>
+          <div><span style="color: var(--subtext);">E-mail do Responsável:</span> <strong id="parent-email" style="color: var(--primary);">--</strong></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Resumo de Frequência Diária</div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 12px; color: var(--subtext);">Total de Dias Letivos:</span>
+          <span style="font-size: 12px; font-weight: 700;" id="report-total">0</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 12px; color: var(--subtext);">Dias Presente:</span>
+          <span style="font-size: 12px; font-weight: 700;" id="report-presencas">0</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="font-size: 12px; color: var(--subtext);">Frequência Geral:</span>
+          <span style="font-size: 12px; font-weight: 700; color: var(--primary);" id="report-percent">0%</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Histórico Geral de Frequência (Dias)</div>
+        <div class="history-list" id="student-bimestre-history"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TELA 5: RECONHECIMENTO FACIAL -->
+  <section id="screen-face-id" class="screen" style="padding-bottom: 0;">
+    <div class="top-header">
+      <button type="button" id="back-to-hub-btn" style="background:none; border:none; color:white; font-size: 20px;">←</button>
+      <span style="font-size: 16px; font-weight: 700;">Biometria Facial</span>
+      <div></div>
+    </div>
+
+    <div class="main-content" style="text-align: center;">
+      <p style="font-size: 13px; color: var(--subtext);" id="camera-status">Posicione o rosto dentro do círculo...</p>
+      
+      <div class="camera-container">
+        <video id="webcam" autoplay playsinline muted webkit-playsinline></video>
+      </div>
+
+      <button type="button" id="confirm-face-btn" class="btn-primary">Validar Presença Diária</button>
+    </div>
+  </section>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav" id="main-bottom-nav" style="display: none;">
+    <button type="button" class="nav-item active" data-target="screen-student-hub">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Início</span>
+    </button>
+    <button type="button" class="nav-item" data-target="screen-avisos">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 9h-2V5h2v6zm0 4h-2v-2h2v2z"/></svg>
+      <span>Avisos</span>
+    </button>
+    <button type="button" class="nav-item" data-target="screen-aulas">
+      <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+      <span>Aulas</span>
+    </button>
+    <button type="button" class="nav-item" data-target="screen-relatorios">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+      <span>Relatórios</span>
+    </button>
+    <button type="button" class="nav-item" id="logout-btn">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      <span>Sair</span>
+    </button>
+  </div>
+
+</div>
+
+<div id="toast" class="toast">Notificação</div>
+
+<script>
+function addFastClick(element, handler) {
+  if (!element) return;
+  let touched = false;
+  element.addEventListener('touchstart', function(e) { touched = true; }, { passive: true });
+  element.addEventListener('touchend', function(e) {
+    if (touched) {
+      e.preventDefault();
+      handler.call(this, e);
+      touched = false;
+    }
+  });
+  element.addEventListener('click', function(e) {
+    if (!touched) handler.call(this, e);
+  });
+}
+
+const STUDENTS = [
+  { 
+    id: "s1", 
+    name: "Juju", 
+    ra: "000114073260-2", 
+    password: "@Hugon2025",
+    parentName: "Carlos Silva",
+    parentEmail: "responsavel.juju@gmail.com",
+    totalAulas: 0,
+    presencas: 0, 
+    faltas: 0, 
+    checkedIn: false, 
+    time: null,
+    date: null,
+    history: []
+  }
+];
+
+const TEACHERS = [
+  {
+    id: "t1",
+    name: "Antônio Catine",
+    email: "antoniocatine@gmail.com",
+    password: "Prof@2025"
+  }
+];
+
+const PARENTS = [
+  {
+    id: "p1",
+    name: "Carlos Silva",
+    email: "responsavel.juju@gmail.com",
+    password: "@Familia2025",
+    studentId: "s1"
+  }
+];
+
+const MASTER_SCHEDULE = {
+  "Seg": [
+    { period: 1, time: "07:00", subject: "Análise e Desenvolvimento de Sistemas", room: "Sala 12", teacher: "Antônio Catine" },
+    { period: 2, time: "07:50", subject: "Lógica de Programação", room: "Laboratório 01", teacher: "Marcos Lima" },
+    { period: 3, time: "08:40", subject: "Banco de Dados", room: "Sala 08", teacher: "Renata Souza" },
+    { period: 4, time: "09:30", subject: "Matemática Aplicada", room: "Sala 10", teacher: "Carlos Eduardo" },
+    { period: 5, time: "10:40", subject: "Design de Interfaces (UI/UX)", room: "Sala 05", teacher: "Fernanda Rocha" },
+    { period: 6, time: "11:30", subject: "Projeto Integrador", room: "Sala 14", teacher: "Antônio Catine" },
+    { period: 7, time: "12:20", subject: "Inglês Técnico", room: "Sala 07", teacher: "Patricia Mendes" }
+  ],
+  "Ter": [
+    { period: 1, time: "07:00", subject: "Programação Web", room: "Laboratório 02", teacher: "Lucas Santos" },
+    { period: 2, time: "07:50", subject: "Banco de Dados", room: "Sala 08", teacher: "Renata Souza" },
+    { period: 3, time: "08:40", subject: "Engenharia de Software", room: "Sala 11", teacher: "Roberto Alves" },
+    { period: 4, time: "09:30", subject: "Redes de Computadores", room: "Laboratório 03", teacher: "Juliana Paes" },
+    { period: 5, time: "10:40", subject: "Inglês Técnico", room: "Sala 07", teacher: "Patricia Mendes" },
+    { period: 6, time: "11:30", subject: "Algoritmos", room: "Laboratório 01", teacher: "Marcos Lima" },
+    { period: 7, time: "12:20", subject: "Matemática Aplicada", room: "Sala 10", teacher: "Carlos Eduardo" }
+  ],
+  "Qua": [
+    { period: 1, time: "07:00", subject: "Design de Interfaces (UI/UX)", room: "Sala 05", teacher: "Fernanda Rocha" },
+    { period: 2, time: "07:50", subject: "Lógica de Programação", room: "Laboratório 01", teacher: "Marcos Lima" },
+    { period: 3, time: "08:40", subject: "Sistemas Operacionais", room: "Sala 09", teacher: "Juliana Paes" },
+    { period: 4, time: "09:30", subject: "Segurança da Informação", room: "Sala 13", teacher: "Roberto Alves" },
+    { period: 5, time: "10:40", subject: "Programação Web", room: "Laboratório 02", teacher: "Lucas Santos" },
+    { period: 6, time: "11:30", subject: "Projeto Integrador", room: "Sala 14", teacher: "Antônio Catine" },
+    { period: 7, time: "12:20", subject: "Banco de Dados", room: "Sala 08", teacher: "Renata Souza" }
+  ],
+  "Qui": [
+    { period: 1, time: "07:00", subject: "Algoritmos", room: "Laboratório 01", teacher: "Marcos Lima" },
+    { period: 2, time: "07:50", subject: "Banco de Dados", room: "Sala 08", teacher: "Renata Souza" },
+    { period: 3, time: "08:40", subject: "Análise e Desenvolvimento de Sistemas", room: "Sala 12", teacher: "Antônio Catine" },
+    { period: 4, time: "09:30", subject: "Matemática Aplicada", room: "Sala 10", teacher: "Carlos Eduardo" },
+    { period: 5, time: "10:40", subject: "Redes de Computadores", room: "Laboratório 03", teacher: "Juliana Paes" },
+    { period: 6, time: "11:30", subject: "Engenharia de Software", room: "Sala 11", teacher: "Roberto Alves" },
+    { period: 7, time: "12:20", subject: "Segurança da Informação", room: "Sala 13", teacher: "Roberto Alves" }
+  ],
+  "Sex": [
+    { period: 1, time: "07:00", subject: "Programação Web", room: "Laboratório 02", teacher: "Lucas Santos" },
+    { period: 2, time: "07:50", subject: "Sistemas Operacionais", room: "Sala 09", teacher: "Juliana Paes" },
+    { period: 3, time: "08:40", subject: "Segurança da Informação", room: "Sala 13", teacher: "Roberto Alves" },
+    { period: 4, time: "09:30", subject: "Inglês Técnico", room: "Sala 07", teacher: "Patricia Mendes" },
+    { period: 5, time: "10:40", subject: "Design de Interfaces (UI/UX)", room: "Sala 05", teacher: "Fernanda Rocha" },
+    { period: 6, time: "11:30", subject: "Projeto Integrador", room: "Sala 14", teacher: "Antônio Catine" },
+    { period: 7, time: "12:20", subject: "Engenharia de Software", room: "Sala 11", teacher: "Roberto Alves" }
+  ]
+};
+
+let noticeBoardData = [];
+const teacherAbsences = {}; 
+let absenceNotifications = [];
+
+let currentUser = null;
+let currentUserType = null; 
+let currentParent = null;
+let activeLoginTab = "aluno";
+let isParentRegisterMode = false; // Controla se o responsável está criando conta
+let videoStream = null;
+let studentSelectedDay = 'Seg';
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  const targetScreen = document.getElementById(id);
+  if (targetScreen) targetScreen.classList.add("active");
+
+  const nav = document.getElementById("main-bottom-nav");
+  if (id === "screen-login" || id === "screen-face-id" || id === "screen-teacher-hub" || id === "screen-parent-hub") {
+    nav.style.display = "none";
+  } else {
+    nav.style.display = "flex";
+  }
+
+  if (id === "screen-aulas") renderStudentWeeklyClasses(studentSelectedDay);
+  if (id === "screen-avisos") renderStudentNoticeBoard();
+  if (id !== "screen-face-id") stopCamera();
+}
+
+function switchLoginTab(tab) {
+  activeLoginTab = tab;
+  isParentRegisterMode = false;
+
+  document.getElementById("tab-aluno").classList.toggle("active", tab === "aluno");
+  document.getElementById("tab-professor").classList.toggle("active", tab === "professor");
+  document.getElementById("tab-responsavel").classList.toggle("active", tab === "responsavel");
+
+  document.getElementById("fields-aluno").style.display = tab === "aluno" ? "block" : "none";
+  document.getElementById("fields-professor").style.display = tab === "professor" ? "block" : "none";
+  document.getElementById("fields-responsavel").style.display = tab === "responsavel" ? "block" : "none";
+
+  const btnToggle = document.getElementById("btn-toggle-parent-mode");
+  if (tab === "responsavel") {
+    btnToggle.style.display = "block";
+    updateParentFormUI();
+  } else {
+    btnToggle.style.display = "none";
+    document.getElementById("login-card-title").textContent = "Entrar";
+    document.getElementById("login-card-sub").textContent = "Selecione o tipo de acesso";
+    document.getElementById("btn-submit-login").textContent = "Entrar na Conta";
+  }
+
+  document.getElementById("login-error").style.display = "none";
+}
+
+function updateParentFormUI() {
+  const loginView = document.getElementById("resp-mode-login");
+  const regView = document.getElementById("resp-mode-register");
+  const btnToggle = document.getElementById("btn-toggle-parent-mode");
+  const btnSubmit = document.getElementById("btn-submit-login");
+
+  if (isParentRegisterMode) {
+    loginView.style.display = "none";
+    regView.style.display = "block";
+    document.getElementById("login-card-title").textContent = "Criar Conta";
+    document.getElementById("login-card-sub").textContent = "Cadastre-se como Responsável";
+    btnSubmit.textContent = "Cadastrar Conta";
+    btnToggle.textContent = "Já possui uma conta? Fazer Login";
+  } else {
+    loginView.style.display = "block";
+    regView.style.display = "none";
+    document.getElementById("login-card-title").textContent = "Entrar";
+    document.getElementById("login-card-sub").textContent = "Selecione o tipo de acesso";
+    btnSubmit.textContent = "Entrar na Conta";
+    btnToggle.textContent = "Criar conta de Responsável";
+  }
+}
+
+function toggleParentMode() {
+  isParentRegisterMode = !isParentRegisterMode;
+  document.getElementById("login-error").style.display = "none";
+  updateParentFormUI();
+}
+
+function switchTeacherTab(tab) {
+  document.getElementById("tab-teacher-aulas").classList.toggle("active", tab === "aulas");
+  document.getElementById("tab-teacher-avisos").classList.toggle("active", tab === "avisos");
+  
+  document.getElementById("teacher-view-aulas").style.display = tab === "aulas" ? "block" : "none";
+  document.getElementById("teacher-view-avisos").style.display = tab === "avisos" ? "flex" : "none";
+
+  if (tab === "avisos") renderTeacherNoticeList();
+}
+
+function executeLogin() {
+  if (activeLoginTab === "aluno") {
+    const raInput = document.getElementById("login-ra");
+    const passInput = document.getElementById("login-password-aluno");
+
+    const ra = raInput.value.replace(/\s+/g, '');
+    const pass = passInput.value.trim();
+
+    const student = STUDENTS.find(s => s.ra === ra && s.password === pass);
+
+    if (!student) {
+      document.getElementById("login-error").textContent = "RA ou senha incorretos.";
+      document.getElementById("login-error").style.display = "block";
+      return;
+    }
+
+    document.getElementById("login-error").style.display = "none";
+    currentUser = student;
+    currentUserType = "aluno";
+
+    renderHub();
+    showScreen("screen-student-hub");
+
+  } else if (activeLoginTab === "responsavel") {
+    
+    // MODO CRIAÇÃO DE CONTA DO RESPONSÁVEL
+    if (isParentRegisterMode) {
+      const email = document.getElementById("reg-email-responsavel").value.trim().toLowerCase();
+      const ra = document.getElementById("reg-ra-aluno").value.replace(/\s+/g, '');
+      const pass = document.getElementById("reg-password").value.trim();
+      const passConfirm = document.getElementById("reg-password-confirm").value.trim();
+
+      if (!email || !ra || !pass || !passConfirm) {
+        document.getElementById("login-error").textContent = "Preencha todos os campos do cadastro.";
+        document.getElementById("login-error").style.display = "block";
+        return;
+      }
+
+      if (pass !== passConfirm) {
+        document.getElementById("login-error").textContent = "As senhas não coincidem. Digite novamente.";
+        document.getElementById("login-error").style.display = "block";
+        return;
+      }
+
+      const linkedStudent = STUDENTS.find(s => s.ra === ra);
+      if (!linkedStudent) {
+        document.getElementById("login-error").textContent = "RA do aluno não encontrado no sistema.";
+        document.getElementById("login-error").style.display = "block";
+        return;
+      }
+
+      // Cria a nova conta de responsável
+      const newParent = {
+        id: "p_" + Date.now(),
+        name: "Responsável (" + linkedStudent.name + ")",
+        email: email,
+        password: pass,
+        studentId: linkedStudent.id
+      };
+
+      PARENTS.push(newParent);
+      linkedStudent.parentEmail = email;
+
+      document.getElementById("login-error").style.display = "none";
+      currentUser = linkedStudent;
+      currentUserType = "responsavel";
+      currentParent = newParent;
+
+      showToast("Conta criada com sucesso!");
+      renderParentHub();
+      showScreen("screen-parent-hub");
+
+    } else {
+      // MODO LOGIN TRADICIONAL
+      const emailInput = document.getElementById("login-email-responsavel");
+      const passInput = document.getElementById("login-password-responsavel");
+
+      const email = emailInput.value.replace(/\s+/g, '').toLowerCase();
+      const pass = passInput.value.trim();
+
+      const parent = PARENTS.find(p => p.email.toLowerCase() === email && p.password === pass);
+
+      if (!parent) {
+        document.getElementById("login-error").textContent = "E-mail ou senha incorretos.";
+        document.getElementById("login-error").style.display = "block";
+        return;
+      }
+
+      const linkedStudent = STUDENTS.find(s => s.id === parent.studentId);
+
+      if (!linkedStudent) {
+        document.getElementById("login-error").textContent = "Nenhum aluno vinculado a este responsável.";
+        document.getElementById("login-error").style.display = "block";
+        return;
+      }
+
+      document.getElementById("login-error").style.display = "none";
+      currentUser = linkedStudent;
+      currentUserType = "responsavel";
+      currentParent = parent;
+
+      renderParentHub();
+      showScreen("screen-parent-hub");
+    }
+
+  } else {
+    // PROFESSOR
+    const gmailInput = document.getElementById("login-gmail");
+    const passInput = document.getElementById("login-password-professor");
+
+    const email = gmailInput.value.replace(/\s+/g, '').toLowerCase();
+    const pass = passInput.value.trim();
+
+    const teacher = TEACHERS.find(t => t.email.toLowerCase() === email && t.password === pass);
+
+    if (!teacher) {
+      document.getElementById("login-error").textContent = "Gmail ou senha incorretos.";
+      document.getElementById("login-error").style.display = "block";
+      return;
+    }
+
+    document.getElementById("login-error").style.display = "none";
+    currentUser = teacher;
+    currentUserType = "professor";
+
+    document.getElementById("hub-teacher-name").textContent = `Olá, ${teacher.name}!`;
+    document.getElementById("teacher-avatar-initials").textContent = "AC";
+
+    switchTeacherTab('aulas');
+    renderTeacherSchedule();
+    showScreen("screen-teacher-hub");
+  }
+}
+
+function createNotice() {
+  const type = document.getElementById("notice-type").value;
+  const title = document.getElementById("notice-title").value.trim();
+  const desc = document.getElementById("notice-desc").value.trim();
+
+  if (!title || !desc) return;
+
+  const today = new Date().toLocaleDateString('pt-BR');
+
+  const newNotice = {
+    id: Date.now(),
+    type: type,
+    title: title,
+    desc: desc,
+    author: `Prof. ${currentUser.name}`,
+    date: today
+  };
+
+  noticeBoardData.unshift(newNotice);
+
+  document.getElementById("notice-title").value = "";
+  document.getElementById("notice-desc").value = "";
+
+  renderTeacherNoticeList();
+  showToast("Aviso publicado na aba de Avisos dos Alunos!");
+}
+
+function deleteNotice(id) {
+  noticeBoardData = noticeBoardData.filter(item => item.id !== id);
+  renderTeacherNoticeList();
+  showToast("Aviso removido com sucesso.");
+}
+
+function renderTeacherNoticeList() {
+  const container = document.getElementById("teacher-notices-list");
+  if (!container) return;
+
+  if (noticeBoardData.length === 0) {
+    container.innerHTML = `<div style="font-size:12px; color:var(--subtext); text-align:center; padding:12px 0;">Nenhum aviso publicado por você ainda.</div>`;
+    return;
+  }
+
+  const typeLabels = {
+    prova: { label: "📝 Prova", class: "tag-prova" },
+    evento: { label: "🎉 Evento", class: "tag-evento" },
+    recado: { label: "📌 Recado", class: "tag-recado" }
+  };
+
+  container.innerHTML = noticeBoardData.map(item => {
+    const tagInfo = typeLabels[item.type] || typeLabels.recado;
+    return `
+      <div class="notice-item">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <span class="notice-tag ${tagInfo.class}">${tagInfo.label}</span>
+          <button type="button" class="btn-delete-notice" data-id="${item.id}" style="background:none; border:none; color:var(--red); font-size:11px; font-weight:700; cursor:pointer;">Excluir</button>
+        </div>
+        <div class="notice-title">${item.title}</div>
+        <div class="notice-desc">${item.desc}</div>
+        <div class="notice-meta">
+          <span>${item.author}</span>
+          <span>${item.date}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.querySelectorAll('.btn-delete-notice').forEach(btn => {
+    addFastClick(btn, () => deleteNotice(Number(btn.dataset.id)));
+  });
+}
+
+function renderStudentNoticeBoard() {
+  const container = document.getElementById("student-notices-container");
+  if (!container) return;
+
+  if (noticeBoardData.length === 0) {
+    container.innerHTML = `<div style="font-size:12px; color:var(--subtext); text-align:center; padding:20px 0;">Nenhum aviso ou comunicado no momento.</div>`;
+    return;
+  }
+
+  const typeLabels = {
+    prova: { label: "📝 Prova", class: "tag-prova" },
+    evento: { label: "🎉 Evento", class: "tag-evento" },
+    recado: { label: "📌 Recado", class: "tag-recado" }
+  };
+
+  container.innerHTML = noticeBoardData.map(item => {
+    const tagInfo = typeLabels[item.type] || typeLabels.recado;
+    return `
+      <div class="notice-item">
+        <span class="notice-tag ${tagInfo.class}">${tagInfo.label}</span>
+        <div class="notice-title">${item.title}</div>
+        <div class="notice-desc">${item.desc}</div>
+        <div class="notice-meta">
+          <span>${item.author}</span>
+          <span>${item.date}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderTeacherSchedule(selectedDay = window.selectedTeacherDay || "Seg") {
+  window.selectedTeacherDay = selectedDay;
+
+  const dayNames = {
+    "Seg": "Segunda-feira",
+    "Ter": "Terça-feira",
+    "Qua": "Quarta-feira",
+    "Qui": "Quinta-feira",
+    "Sex": "Sexta-feira"
+  };
+
+  document.querySelectorAll(".teacher-day-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.day === selectedDay);
+  });
+
+  document.getElementById("teacher-day-title").textContent = dayNames[selectedDay];
+
+  const list = document.getElementById("teacher-schedule-list");
+  list.innerHTML = "";
+
+  const dayClasses = (MASTER_SCHEDULE[selectedDay] || []).filter(c => c.teacher === currentUser.name);
+
+  if (dayClasses.length === 0) {
+    list.innerHTML = `<div style="font-size:12px; color:var(--subtext); padding:10px 0;">Nenhuma aula cadastrada para você neste dia.</div>`;
+    return;
+  }
+
+  dayClasses.forEach(c => {
+    const key = `${selectedDay}-${c.period}`;
+    const isNotified = !!teacherAbsences[key];
+    const row = document.createElement("div");
+
+    row.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #EDF2F7;";
+
+    row.innerHTML = `
+      <div>
+        <strong style="font-size:12px; color:var(--text);">${c.subject}</strong><br>
+        <span style="font-size:11px; color:var(--subtext);">${c.time} • ${c.room} (${c.period}ª aula)</span>
+      </div>
+      <button type="button" class="btn-secondary btn-teacher-notify" data-day="${selectedDay}" data-period="${c.period}" style="width:auto; height:34px; padding:0 10px; margin-top:0;" ${isNotified ? "disabled" : ""}>
+        ${isNotified ? "Avisado" : "Avisar Falta"}
+      </button>`;
+
+    list.appendChild(row);
+  });
+
+  list.querySelectorAll('.btn-teacher-notify').forEach(btn => {
+    addFastClick(btn, () => {
+      teacherNotifyAbsence(btn.dataset.day, Number(btn.dataset.period));
+    });
+  });
+}
+
+function teacherNotifyAbsence(day, period) {
+  const key = `${day}-${period}`;
+  const c = MASTER_SCHEDULE[day].find(x => x.period === period);
+  if (!c || teacherAbsences[key]) return;
+
+  teacherAbsences[key] = {
+    teacher: currentUser.name,
+    subject: c.subject,
+    time: c.time,
+    room: c.room,
+    day: day,
+    period: period
+  };
+
+  absenceNotifications.push({
+    message: `O Prof. ${currentUser.name} avisou que faltará à aula de ${c.subject}!`
+  });
+
+  renderTeacherSchedule(day);
+  updateNotifDot();
+  showToast(`Aviso enviado aos alunos sobre a falta em ${c.subject}!`);
+}
+
+function updateNotifDot() {
+  document.getElementById("notif-dot").style.display = absenceNotifications.length > 0 ? "block" : "none";
+}
+
+function renderBimestreHistory(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container || !currentUser || !currentUser.history) return;
+
+  if (currentUser.history.length === 0) {
+    container.innerHTML = `<div style="font-size:12px; color:var(--subtext); text-align:center; padding:12px 0;">Nenhum registro no histórico.</div>`;
+    return;
+  }
+
+  container.innerHTML = currentUser.history.map(item => `
+    <div class="history-row">
+      <div>
+        <strong style="color: var(--text);">Presença Geral do Dia</strong>
+        <div style="font-size: 11px; color: var(--subtext); margin-top: 2px;">${item.date}</div>
+      </div>
+      <span class="${item.status === 'presente' ? 'badge-presente' : 'badge-falta'}">
+        ${item.status === 'presente' ? '✔ Presente' : '✖ Ausente'}
+      </span>
+    </div>
+  `).join('');
+}
+
+function renderHub(){
+  if(!currentUser) return;
+  updateNotifDot();
+
+  const firstName = currentUser.name.split(' ')[0];
+  document.getElementById("hub-student-name").textContent = `Olá, ${firstName}!`;
+  document.getElementById("avatar-initials").textContent = firstName.substring(0,2).toUpperCase();
+
+  document.getElementById("parent-name").textContent = currentUser.parentName;
+  document.getElementById("parent-email").textContent = currentUser.parentEmail;
+
+  const freqPerc = currentUser.totalAulas > 0 ? Math.round((currentUser.presencas / currentUser.totalAulas) * 100) : 0;
+
+  document.getElementById("freq-value").textContent = `${freqPerc}%`;
+  document.getElementById("count-presencas").textContent = currentUser.presencas;
+  document.getElementById("count-faltas").textContent = currentUser.faltas;
+
+  document.getElementById("report-total").textContent = currentUser.totalAulas;
+  document.getElementById("report-presencas").textContent = currentUser.presencas;
+  document.getElementById("report-percent").textContent = `${freqPerc}%`;
+
+  document.getElementById("donut-chart-bg").style.background = 
+    `conic-gradient(var(--primary) 0% ${freqPerc}%, #E9D8FD ${freqPerc}% 100%)`;
+
+  const banner = document.getElementById("open-face-scan-btn");
+  if(currentUser.checkedIn){
+    banner.classList.add("disabled");
+    document.getElementById("banner-title").textContent = "Presença do Dia Registrada";
+    document.getElementById("banner-sub").textContent = `Confirmada hoje às ${currentUser.time}`;
+    
+    document.getElementById("hist-status").textContent = "Presença confirmada hoje";
+    document.getElementById("hist-time").textContent = currentUser.time;
+    document.getElementById("hist-date").textContent = currentUser.date;
+  } else {
+    banner.classList.remove("disabled");
+    document.getElementById("banner-title").textContent = "Registrar Presença Diária";
+    document.getElementById("banner-sub").textContent = "Clique para biometria facial";
+  }
+
+  renderBimestreHistory("student-bimestre-history");
+}
+
+function renderParentHub(){
+  if(!currentUser || !currentParent) return;
+
+  document.getElementById("parent-hub-title").textContent = `Olá, ${currentParent.name.split(' ')[0]}!`;
+  document.getElementById("parent-hub-subtitle").textContent = `Acompanhando: ${currentUser.name}`;
+  document.getElementById("parent-avatar-initials").textContent = currentUser.name.substring(0,2).toUpperCase();
+
+  const freqPerc = currentUser.totalAulas > 0 ? Math.round((currentUser.presencas / currentUser.totalAulas) * 100) : 0;
+  document.getElementById("parent-freq-value").textContent = `${freqPerc}%`;
+  document.getElementById("parent-count-presencas").textContent = currentUser.presencas;
+  document.getElementById("parent-count-faltas").textContent = currentUser.faltas;
+  document.getElementById("parent-total-days-badge").textContent = `${currentUser.totalAulas} Dias Letivos`;
+
+  document.getElementById("parent-donut-chart-bg").style.background =
+    `conic-gradient(var(--primary) 0% ${freqPerc}%, #E9D8FD ${freqPerc}% 100%)`;
+
+  const cardElem = document.getElementById("parent-today-card");
+  const containerElem = document.getElementById("parent-today-status-container");
+
+  if(currentUser.checkedIn){
+    cardElem.classList.add("card-status-present");
+    containerElem.innerHTML = `
+      <div class="status-badge-green">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        Presença Confirmada Hoje
+      </div>
+      <p style="font-size: 12px; color: #22543D; font-weight: 600;">O aluno realizou a biometria com sucesso às <strong>${currentUser.time}</strong> (${currentUser.date}).</p>
+    `;
+  } else {
+    cardElem.classList.remove("card-status-present");
+    containerElem.innerHTML = `
+      <p id="parent-today-status" style="font-size: 13px; color: var(--subtext);">O aluno ainda não validou a presença hoje.</p>
+    `;
+  }
+
+  renderBimestreHistory("parent-bimestre-history");
+  renderParentNoticeBoard();
+}
+
+function renderParentNoticeBoard() {
+  const container = document.getElementById("parent-notices-container");
+  if (!container) return;
+
+  if (noticeBoardData.length === 0) {
+    container.innerHTML = `<div style="font-size:12px; color:var(--subtext); text-align:center; padding:12px 0;">Nenhum aviso ou comunicado no momento.</div>`;
+    return;
+  }
+
+  const typeLabels = {
+    prova: { label: "📝 Prova", class: "tag-prova" },
+    evento: { label: "🎉 Evento", class: "tag-evento" },
+    recado: { label: "📌 Recado", class: "tag-recado" }
+  };
+
+  container.innerHTML = noticeBoardData.map(item => {
+    const tagInfo = typeLabels[item.type] || typeLabels.recado;
+    return `
+      <div class="notice-item">
+        <span class="notice-tag ${tagInfo.class}">${tagInfo.label}</span>
+        <div class="notice-title">${item.title}</div>
+        <div class="notice-desc">${item.desc}</div>
+        <div class="notice-meta">
+          <span>${item.author}</span>
+          <span>${item.date}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function startCamera(){
+  const video = document.getElementById("webcam");
+  const statusElem = document.getElementById("camera-status");
+  
+  statusElem.textContent = "Solicitando permissão da câmera...";
+
+  const constraints = {
+    audio: false,
+    video: {
+      facingMode: "user",
+      width: { ideal: 640 },
+      height: { ideal: 480 }
+    }
+  };
+
+  try {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+    } else if (navigator.webkitGetUserMedia) {
+      videoStream = await new Promise((resolve, reject) => {
+        navigator.webkitGetUserMedia(constraints, resolve, reject);
+      });
+    } else {
+      throw new Error("Navegador incompatível com acesso à câmera.");
+    }
+
+    video.srcObject = videoStream;
+    await video.play();
+    statusElem.textContent = "Posicione o rosto dentro do círculo...";
+
+  } catch (err) {
+    console.error("Erro na câmera:", err);
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+      statusElem.textContent = "O iOS exige conexão HTTPS para usar a câmera.";
+    } else {
+      statusElem.textContent = "Acesso à câmera negado ou indisponível.";
+    }
+  }
+}
+
+function stopCamera(){
+  if(videoStream){
+    videoStream.getTracks().forEach(track => track.stop());
+    videoStream = null;
+  }
+}
+
+function showToast(text){
+  const toast = document.getElementById("toast");
+  toast.textContent = text;
+  toast.classList.add("show");
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3500);
+}
+
+function studentClassHTML(c, day){
+  const key = `${day}-${c.period}`;
+  const isAbsent = !!teacherAbsences[key];
+  const absenceData = teacherAbsences[key];
+
+  return `
+    <div class="student-class-row ${isAbsent ? 'student-class-absent' : ''}">
+      <div class="student-class-time">${c.time}</div>
+      <div class="student-class-info">
+        <div class="student-class-name">${c.subject}</div>
+        <div class="student-class-room">${c.room} · Prof. <strong>${c.teacher}</strong></div>
+      </div>
+      ${isAbsent ? `<div class="student-absence-badge">FALTA: PROF. ${absenceData.teacher.toUpperCase()}</div>` : ''}
+    </div>`;
+}
+
+function renderStudentWeeklyClasses(day = 'Seg'){
+  studentSelectedDay = day;
+  const container = document.getElementById('studentWeeklyClasses');
+  const alertsContainer = document.getElementById('studentAbsenceAlerts');
+  if(!container) return;
+
+  const names = { Seg:'Segunda-feira', Ter:'Terça-feira', Qua:'Quarta-feira', Qui:'Quinta-feira', Sex:'Sexta-feira' };
+  const dayClasses = MASTER_SCHEDULE[day] || [];
+
+  container.innerHTML = `
+    <div class="student-week-days">
+      ${Object.keys(MASTER_SCHEDULE).map(d => `<button type="button" class="student-week-day-btn ${d === day ? 'active' : ''}" data-student-day="${d}">${d}</button>`).join('')}
+    </div>
+    <div class="student-week-title">${names[day]}</div>
+    <div class="student-class-list">
+      ${dayClasses.slice(0,4).map(c => studentClassHTML(c, day)).join('')}
+      <div class="student-class-row student-interval">⏸ Intervalo · 10:20–10:40</div>
+      ${dayClasses.slice(4).map(c => studentClassHTML(c, day)).join('')}
+    </div>`;
+
+  container.querySelectorAll('[data-student-day]').forEach(b => {
+    addFastClick(b, () => renderStudentWeeklyClasses(b.dataset.studentDay));
+  });
+
+  if(alertsContainer) {
+    alertsContainer.innerHTML = '';
+    const activeAlerts = Object.values(teacherAbsences).filter(a => a.day === day);
+    activeAlerts.forEach(a => {
+      const alertDiv = document.createElement('div');
+      alertDiv.className = 'student-alert';
+      alertDiv.innerHTML = `
+        <div>⚠️</div>
+        <div>
+          <strong>Aviso de Ausência</strong>
+          <div>O prof. <strong>${a.teacher}</strong> avisou que faltará na ${a.period}ª aula (${a.subject} - ${a.time}).</div>
+        </div>`;
+      alertsContainer.appendChild(alertDiv);
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+
+  // Login Tabs
+  addFastClick(document.getElementById("tab-aluno"), () => switchLoginTab('aluno'));
+  addFastClick(document.getElementById("tab-professor"), () => switchLoginTab('professor'));
+  addFastClick(document.getElementById("tab-responsavel"), () => switchLoginTab('responsavel'));
+
+  addFastClick(document.getElementById("btn-toggle-parent-mode"), () => toggleParentMode());
+
+  document.getElementById("login-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    executeLogin();
+  });
+
+  // Formatação dinâmica de RA
+  function formatRA(e) {
+    let digits = e.target.value.replace(/\D/g, '').slice(0, 13);
+    if (digits.length > 12) {
+      e.target.value = digits.slice(0, 12) + "-" + digits.slice(12);
+    } else {
+      e.target.value = digits;
+    }
+  }
+
+  document.getElementById("login-ra").addEventListener("input", formatRA);
+  document.getElementById("reg-ra-aluno").addEventListener("input", formatRA);
+
+  // Hub Professor
+  addFastClick(document.getElementById("tab-teacher-aulas"), () => switchTeacherTab('aulas'));
+  addFastClick(document.getElementById("tab-teacher-avisos"), () => switchTeacherTab('avisos'));
+  addFastClick(document.getElementById("teacher-logout-btn"), () => {
+    currentUser = null;
+    currentUserType = null;
+    showScreen("screen-login");
+    showToast("Você saiu do sistema.");
+  });
+
+  document.querySelectorAll(".teacher-day-btn").forEach(btn => {
+    addFastClick(btn, () => renderTeacherSchedule(btn.dataset.day));
+  });
+
+  document.getElementById("notice-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    createNotice();
+  });
+
+  // Hub Aluno
+  addFastClick(document.getElementById("open-face-scan-btn"), () => {
+    if (currentUser.checkedIn) {
+      showToast("Presença já registrada para o dia de hoje!");
+      return;
+    }
+    showScreen("screen-face-id");
+    startCamera();
+  });
+
+  addFastClick(document.getElementById("btn-trigger-absence"), () => {
+    if(!currentUser) return;
+    const now = new Date();
+    const dateString = now.toLocaleDateString('pt-BR');
+
+    currentUser.faltas += 1;
+    currentUser.totalAulas += 1;
+
+    currentUser.history.unshift({
+      date: `${dateString} (Hoje)`,
+      status: "falta"
+    });
+
+    renderHub();
+    showToast(`Falta do dia informada aos pais (${currentUser.parentEmail})!`);
+  });
+
+  addFastClick(document.getElementById("btn-details"), () => {
+    const relBtn = document.querySelector('[data-target="screen-relatorios"]');
+    if (relBtn) relBtn.click();
+  });
+
+  addFastClick(document.getElementById("btn-notifications"), () => {
+    if (absenceNotifications.length === 0) {
+      showToast("Nenhuma notificação no momento.");
+      return;
+    }
+    const last = absenceNotifications[absenceNotifications.length - 1];
+    showToast(last.message);
+    absenceNotifications = [];
+    updateNotifDot();
+  });
+
+  // Biometria Facial
+  addFastClick(document.getElementById("back-to-hub-btn"), () => {
+    showScreen("screen-student-hub");
+  });
+
+  addFastClick(document.getElementById("confirm-face-btn"), () => {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const dateString = now.toLocaleDateString('pt-BR');
+
+    currentUser.checkedIn = true;
+    currentUser.time = timeString;
+    currentUser.date = dateString;
+    currentUser.presencas += 1;
+    currentUser.totalAulas += 1;
+
+    currentUser.history.unshift({
+      date: `${dateString} às ${timeString}`,
+      status: "presente"
+    });
+
+    showToast(`Presença do dia confirmada!`);
+    renderHub();
+    showScreen("screen-student-hub");
+  });
+
+  // Navegação Inferior
+  document.querySelectorAll(".bottom-nav .nav-item[data-target]").forEach(btn => {
+    addFastClick(btn, function() {
+      document.querySelectorAll(".bottom-nav .nav-item").forEach(i => i.classList.remove("active"));
+      this.classList.add("active");
+      showScreen(this.getAttribute("data-target"));
+    });
+  });
+
+  addFastClick(document.getElementById("logout-btn"), () => {
+    currentUser = null;
+    currentUserType = null;
+    showScreen("screen-login");
+    showToast("Você saiu do sistema.");
+  });
+
+  addFastClick(document.getElementById("parent-logout-btn"), () => {
+    currentUser = null;
+    currentUserType = null;
+    currentParent = null;
+    showScreen("screen-login");
+    showToast("Você saiu do sistema.");
+  });
+
+  renderStudentWeeklyClasses('Seg');
+});
+</script>
+</body>
+</html>
