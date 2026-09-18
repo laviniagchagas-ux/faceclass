@@ -136,6 +136,7 @@ private fun FaceClassApp(viewModel: FaceClassViewModel = viewModel()) {
 
             "PROFESSOR" -> TeacherHome(
                 name = user.nome,
+                activeLesson = state.activeTeacherLesson,
                 dashboard = state.dashboard,
                 loading = state.isLoading,
                 message = state.message,
@@ -767,6 +768,7 @@ private fun RowScope.BottomNavItem(icon: String, label: String, selected: Boolea
 @Composable
 private fun TeacherHome(
     name: String,
+    activeLesson: Lesson?,
     dashboard: ClassDashboard?,
     loading: Boolean,
     message: String?,
@@ -778,37 +780,116 @@ private fun TeacherHome(
     var classId by rememberSaveable { mutableStateOf("1") }
     var subject by rememberSaveable { mutableStateOf("Matemática") }
     Column(Modifier.fillMaxSize().background(AppBackground)) {
-        SimplePurpleHeader("Painel do professor", "Olá, ${firstName(name)}", onLogout)
+        SimplePurpleHeader("Chamada e presença", "Olá, ${firstName(name)}", onLogout)
         LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item {
                 FaceCard {
-                    Text("Abrir chamada", fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge, color = TextMain)
-                    Text("A aula criada fica ativa por uma hora.", color = TextMuted, style = MaterialTheme.typography.bodySmall)
+                    Text("Chamada de hoje", fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge, color = TextMain)
+                    Text(
+                        if (activeLesson == null) "Abra uma aula para os alunos registrarem presença."
+                        else "A chamada está ativa. Os alunos já podem registrar presença.",
+                        color = TextMuted,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                     Spacer(Modifier.height(14.dp))
-                    FieldLabel("ID da turma")
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        TeacherMetric(
+                            modifier = Modifier.weight(1f),
+                            label = "Turma",
+                            value = activeLesson?.id_turma?.toString() ?: classId,
+                        )
+                        TeacherMetric(
+                            modifier = Modifier.weight(1f),
+                            label = "Situação",
+                            value = if (activeLesson == null) "Fechada" else "Ativa",
+                            valueColor = if (activeLesson == null) TextMuted else Green,
+                        )
+                    }
+                }
+            }
+            item {
+                FaceCard {
+                    Text("Abrir chamada", fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge, color = TextMain)
+                    Text("A chamada fica ativa por uma hora e o painel é atualizado em tempo real.", color = TextMuted, style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(14.dp))
+                    FieldLabel("Turma")
                     OutlinedTextField(classId, { classId = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(14.dp))
+                    Text("Na demonstração, a turma cadastrada é a 1.", color = TextMuted, style = MaterialTheme.typography.labelSmall)
                     Spacer(Modifier.height(10.dp))
                     FieldLabel("Disciplina")
                     OutlinedTextField(subject, { subject = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(14.dp))
                     Spacer(Modifier.height(14.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(onClick = { onCreateLesson(classId, subject) }, enabled = !loading, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)) { Text("Criar aula") }
-                        OutlinedButton(onClick = { onLoadDashboard(classId) }, enabled = !loading, shape = RoundedCornerShape(12.dp)) { Text("Ver painel") }
+                        Button(
+                            onClick = { onCreateLesson(classId, subject) },
+                            enabled = !loading,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple),
+                        ) { Text("Abrir chamada") }
+                        OutlinedButton(
+                            onClick = { onLoadDashboard(classId) },
+                            enabled = !loading,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                        ) { Text("Atualizar painel") }
                     }
                     MessageCard(message, onClearMessage)
                 }
             }
+            activeLesson?.let { lesson ->
+                item {
+                    Surface(color = LightPurple, shape = RoundedCornerShape(16.dp)) {
+                        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                            Text("●  Chamada ativa", color = Green, fontWeight = FontWeight.ExtraBold)
+                            Spacer(Modifier.height(4.dp))
+                            Text("${lesson.disciplina} • Turma ${lesson.id_turma}", color = TextMain, fontWeight = FontWeight.Bold)
+                            Text("Os registros feitos pelos alunos aparecerão no painel abaixo.", color = TextMuted, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
             if (loading) item { LoadingCard() }
             dashboard?.let { current ->
-                item { Text("${current.turma} • ${current.ano_letivo}", fontWeight = FontWeight.ExtraBold, color = TextMain) }
+                item {
+                    Column {
+                        Text("Acompanhamento da turma", fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge, color = TextMain)
+                        Text("${current.turma} • ${current.ano_letivo}", color = TextMuted, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
                 items(current.alunos, key = { it.id_aluno }) { student ->
                     FaceCard {
                         Text(student.nome_aluno, fontWeight = FontWeight.Bold, color = TextMain)
-                        Text("Presentes: ${student.presentes} • Atrasos: ${student.atrasos} • Faltas: ${student.faltas}", color = TextMuted, style = MaterialTheme.typography.bodySmall)
+                        student.ra?.let { Text("RA $it", color = TextMuted, style = MaterialTheme.typography.labelSmall) }
+                        Spacer(Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TeacherMetric(Modifier.weight(1f), "Presentes", student.presentes.toString(), Green)
+                            TeacherMetric(Modifier.weight(1f), "Atrasos", student.atrasos.toString(), Orange)
+                            TeacherMetric(Modifier.weight(1f), "Faltas", student.faltas.toString(), Red)
+                        }
+                        Spacer(Modifier.height(12.dp))
                         Text("Saldo de atraso: ${student.percentual_atraso_atual}%", color = PrimaryPurple, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                     }
                 }
             }
+            if (dashboard == null && !loading) {
+                item { EmptyCard("Abra uma chamada ou toque em Atualizar painel para acompanhar a turma.") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TeacherMetric(
+    modifier: Modifier,
+    label: String,
+    value: String,
+    valueColor: Color = TextMain,
+) {
+    Surface(modifier = modifier, color = AppBackground, shape = RoundedCornerShape(12.dp)) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+            Text(value, color = valueColor, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
+            Text(label, color = TextMuted, style = MaterialTheme.typography.labelSmall)
         }
     }
 }

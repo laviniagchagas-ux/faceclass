@@ -21,6 +21,7 @@ data class FaceClassUiState(
     val lateness: LatenessSummary? = null,
     val faceRegistered: Boolean = false,
     val dashboard: ClassDashboard? = null,
+    val activeTeacherLesson: Lesson? = null,
     val isLoading: Boolean = false,
     val message: String? = null,
 )
@@ -87,6 +88,7 @@ class FaceClassViewModel(application: Application) : AndroidViewModel(applicatio
                 )
             )
             state.value = state.value.copy(
+                activeTeacherLesson = lesson,
                 message = "Aula de ${lesson.disciplina} criada e válida por uma hora."
             )
             loadDashboard(classId.toString())
