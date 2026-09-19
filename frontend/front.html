@@ -42,6 +42,7 @@
     cursor: pointer !important;
     -webkit-appearance: none;
     appearance: none;
+    user-select: none;
   }
 
   #app {
@@ -64,13 +65,16 @@
     }
   }
 
+  /* CORREÇÃO DE ROLAGEM E EFEITO MOLA (INDO E VOLTANDO) */
   .screen {
     display: none;
     flex-direction: column;
     height: 100%;
     width: 100%;
-    overflow-y: auto;
-    padding-bottom: 70px;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: bounce; /* Efeito mola no mobile */
+    padding-bottom: 90px; /* Garante espaço para não cobrir o menu inferior */
   }
 
   .screen.active {
@@ -86,7 +90,16 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-shrink: 0;
+    flex-shrink: 0; /* Impede cabeçalho de achatar */
+  }
+
+  .main-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex-shrink: 0; /* OBRIGA o conteúdo a expandir e ativar a rolagem */
+    padding-bottom: 30px;
   }
 
   .brand-logo {
@@ -106,13 +119,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .main-content {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
   }
 
   .user-header {
@@ -459,6 +465,7 @@
     border: none;
     background: none;
     width: 20%;
+    padding: 6px 0;
   }
 
   .nav-item.active {
@@ -604,6 +611,69 @@
     opacity: 1;
   }
 
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal-overlay.active {
+    display: flex;
+  }
+
+  .modal-box {
+    background: #FFF;
+    border-radius: 20px;
+    padding: 20px;
+    width: 85%;
+    max-width: 320px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  }
+
+  .modal-box h4 {
+    font-size: 16px;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .modal-box p {
+    font-size: 12px;
+    color: var(--subtext);
+    margin-bottom: 18px;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .modal-btn {
+    flex: 1;
+    height: 40px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 700;
+    font-size: 12px;
+  }
+
+  .modal-btn-cancel {
+    background: #EDF2F7;
+    color: var(--text);
+  }
+
+  .modal-btn-confirm {
+    background: var(--red);
+    color: #FFF;
+  }
+
   .student-week-wrap{margin-top:0}
   .student-week-days{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 10px}
   .student-week-days::-webkit-scrollbar{display:none}
@@ -628,7 +698,7 @@
 <div id="app">
 
   <!-- TELA 1: LOGIN -->
-  <section id="screen-login" class="screen active" style="padding-bottom: 0;">
+  <section id="screen-login" class="screen active">
     <div class="top-header" style="height: 180px; align-items: flex-start; padding-top: 40px;">
       <div class="brand-logo">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
@@ -648,7 +718,6 @@
         </div>
 
         <form id="login-form">
-          <!-- CAMPOS ALUNO -->
           <div id="fields-aluno">
             <div style="margin-bottom: 14px;">
               <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">RA do Aluno</label>
@@ -660,21 +729,35 @@
             </div>
           </div>
 
-          <!-- CAMPOS PROFESSOR -->
           <div id="fields-professor" style="display: none;">
-            <div style="margin-bottom: 14px;">
-              <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">Gmail do Professor</label>
-              <input id="login-gmail" type="email" placeholder="antoniocatine@gmail.com" value="antoniocatine@gmail.com" class="input">
+            <div id="prof-mode-login">
+              <div style="margin-bottom: 14px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">Gmail do Professor</label>
+                <input id="login-gmail" type="email" placeholder="antoniocatine@gmail.com" value="antoniocatine@gmail.com" class="input">
+              </div>
+              <div style="margin-bottom: 20px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">Senha</label>
+                <input id="login-password-professor" type="password" value="Prof@2025" class="input">
+              </div>
             </div>
-            <div style="margin-bottom: 20px;">
-              <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">Senha</label>
-              <input id="login-password-professor" type="password" value="Prof@2025" class="input">
+
+            <div id="prof-mode-register" style="display: none;">
+              <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">Gmail do Professor</label>
+                <input id="reg-gmail-professor" type="email" placeholder="seu.gmail@gmail.com" class="input">
+              </div>
+              <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">Criar Senha</label>
+                <input id="reg-password-professor" type="password" placeholder="Sua senha" class="input">
+              </div>
+              <div style="margin-bottom: 20px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">Confirmar Senha</label>
+                <input id="reg-password-confirm-professor" type="password" placeholder="Confirme a senha" class="input">
+              </div>
             </div>
           </div>
 
-          <!-- CAMPOS RESPONSÁVEL (LOGIN OU CADASTRO) -->
           <div id="fields-responsavel" style="display: none;">
-            <!-- MODO LOGIN -->
             <div id="resp-mode-login">
               <div style="margin-bottom: 14px;">
                 <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">E-mail do Responsável</label>
@@ -686,7 +769,6 @@
               </div>
             </div>
 
-            <!-- MODO CADASTRO DE RESPONSÁVEL -->
             <div id="resp-mode-register" style="display: none;">
               <div style="margin-bottom: 12px;">
                 <label style="font-size: 12px; font-weight: 600; color: var(--subtext);">Gmail do Responsável</label>
@@ -710,6 +792,7 @@
           <p id="login-error" style="color: var(--red); font-size: 12px; display: none; margin-bottom: 10px;"></p>
           <button type="submit" class="btn-primary" id="btn-submit-login">Entrar na Conta</button>
           <button type="button" class="btn-link-action" id="btn-toggle-parent-mode" style="display: none;">Criar conta de Responsável</button>
+          <button type="button" class="btn-link-action" id="btn-toggle-teacher-mode" style="display: none;">Criar conta de Professor</button>
         </form>
       </div>
     </div>
@@ -784,7 +867,7 @@
         </div>
       </div>
 
-      <button type="button" class="btn-secondary" id="teacher-logout-btn" style="background-color: var(--primary-light); color: var(--primary);">Sair</button>
+      <button type="button" class="btn-secondary btn-logout-trigger" style="background-color: var(--primary-light); color: var(--primary);">Sair</button>
     </div>
   </section>
 
@@ -842,11 +925,11 @@
         <div id="parent-notices-container"></div>
       </div>
 
-      <button type="button" class="btn-secondary" id="parent-logout-btn" style="background-color: var(--primary-light); color: var(--primary);">Sair</button>
+      <button type="button" class="btn-secondary btn-logout-trigger" style="background-color: var(--primary-light); color: var(--primary);">Sair</button>
     </div>
   </section>
 
-  <!-- TELA 2: DASHBOARD ALUNO -->
+  <!-- TELA 2: DASHBOARD ALUNO (INÍCIO) -->
   <section id="screen-student-hub" class="screen">
     <div class="top-header">
       <div class="brand-logo">
@@ -1039,7 +1122,7 @@
       <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
       <span>Relatórios</span>
     </button>
-    <button type="button" class="nav-item" id="logout-btn">
+    <button type="button" class="nav-item btn-logout-trigger">
       <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
       <span>Sair</span>
     </button>
@@ -1047,22 +1130,33 @@
 
 </div>
 
+<!-- MODAL DE CONFIRMAÇÃO DE SAÍDA -->
+<div class="modal-overlay" id="logout-modal">
+  <div class="modal-box">
+    <h4>Deseja mesmo sair?</h4>
+    <p>Sua sessão será encerrada no dispositivo.</p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" id="btn-cancel-logout">Cancelar</button>
+      <button class="modal-btn modal-btn-confirm" id="btn-confirm-logout">Sair</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast">Notificação</div>
 
 <script>
-function addFastClick(element, handler) {
+function addClick(element, handler) {
   if (!element) return;
-  let touched = false;
-  element.addEventListener('touchstart', function(e) { touched = true; }, { passive: true });
-  element.addEventListener('touchend', function(e) {
-    if (touched) {
-      e.preventDefault();
-      handler.call(this, e);
-      touched = false;
-    }
-  });
+  let lastClickTime = 0;
+  
   element.addEventListener('click', function(e) {
-    if (!touched) handler.call(this, e);
+    const currentTime = new Date().getTime();
+    if (currentTime - lastClickTime < 400) {
+      e.preventDefault();
+      return;
+    }
+    lastClickTime = currentTime;
+    handler.call(this, e);
   });
 }
 
@@ -1074,13 +1168,18 @@ const STUDENTS = [
     password: "@Hugon2025",
     parentName: "Carlos Silva",
     parentEmail: "responsavel.juju@gmail.com",
-    totalAulas: 0,
-    presencas: 0, 
-    faltas: 0, 
+    totalAulas: 20,
+    presencas: 18, 
+    faltas: 2, 
     checkedIn: false, 
     time: null,
     date: null,
-    history: []
+    history: [
+      { date: "17/03/2026", status: "presente" },
+      { date: "16/03/2026", status: "presente" },
+      { date: "13/03/2026", status: "falta" },
+      { date: "12/03/2026", status: "presente" }
+    ]
   }
 ];
 
@@ -1159,7 +1258,8 @@ let currentUser = null;
 let currentUserType = null; 
 let currentParent = null;
 let activeLoginTab = "aluno";
-let isParentRegisterMode = false; // Controla se o responsável está criando conta
+let isParentRegisterMode = false;
+let isTeacherRegisterMode = false;
 let videoStream = null;
 let studentSelectedDay = 'Seg';
 
@@ -1183,6 +1283,7 @@ function showScreen(id){
 function switchLoginTab(tab) {
   activeLoginTab = tab;
   isParentRegisterMode = false;
+  isTeacherRegisterMode = false;
 
   document.getElementById("tab-aluno").classList.toggle("active", tab === "aluno");
   document.getElementById("tab-professor").classList.toggle("active", tab === "professor");
@@ -1192,12 +1293,20 @@ function switchLoginTab(tab) {
   document.getElementById("fields-professor").style.display = tab === "professor" ? "block" : "none";
   document.getElementById("fields-responsavel").style.display = tab === "responsavel" ? "block" : "none";
 
-  const btnToggle = document.getElementById("btn-toggle-parent-mode");
+  const btnToggleParent = document.getElementById("btn-toggle-parent-mode");
+  const btnToggleTeacher = document.getElementById("btn-toggle-teacher-mode");
+
   if (tab === "responsavel") {
-    btnToggle.style.display = "block";
+    btnToggleParent.style.display = "block";
+    btnToggleTeacher.style.display = "none";
     updateParentFormUI();
+  } else if (tab === "professor") {
+    btnToggleParent.style.display = "none";
+    btnToggleTeacher.style.display = "block";
+    updateTeacherFormUI();
   } else {
-    btnToggle.style.display = "none";
+    btnToggleParent.style.display = "none";
+    btnToggleTeacher.style.display = "none";
     document.getElementById("login-card-title").textContent = "Entrar";
     document.getElementById("login-card-sub").textContent = "Selecione o tipo de acesso";
     document.getElementById("btn-submit-login").textContent = "Entrar na Conta";
@@ -1235,6 +1344,35 @@ function toggleParentMode() {
   updateParentFormUI();
 }
 
+function updateTeacherFormUI() {
+  const loginView = document.getElementById("prof-mode-login");
+  const regView = document.getElementById("prof-mode-register");
+  const btnToggle = document.getElementById("btn-toggle-teacher-mode");
+  const btnSubmit = document.getElementById("btn-submit-login");
+
+  if (isTeacherRegisterMode) {
+    loginView.style.display = "none";
+    regView.style.display = "block";
+    document.getElementById("login-card-title").textContent = "Criar Conta";
+    document.getElementById("login-card-sub").textContent = "Cadastre-se como Professor";
+    btnSubmit.textContent = "Cadastrar Conta";
+    btnToggle.textContent = "Já possui uma conta? Fazer Login";
+  } else {
+    loginView.style.display = "block";
+    regView.style.display = "none";
+    document.getElementById("login-card-title").textContent = "Entrar";
+    document.getElementById("login-card-sub").textContent = "Selecione o tipo de acesso";
+    btnSubmit.textContent = "Entrar na Conta";
+    btnToggle.textContent = "Criar conta de Professor";
+  }
+}
+
+function toggleTeacherMode() {
+  isTeacherRegisterMode = !isTeacherRegisterMode;
+  document.getElementById("login-error").style.display = "none";
+  updateTeacherFormUI();
+}
+
 function switchTeacherTab(tab) {
   document.getElementById("tab-teacher-aulas").classList.toggle("active", tab === "aulas");
   document.getElementById("tab-teacher-avisos").classList.toggle("active", tab === "avisos");
@@ -1269,8 +1407,6 @@ function executeLogin() {
     showScreen("screen-student-hub");
 
   } else if (activeLoginTab === "responsavel") {
-    
-    // MODO CRIAÇÃO DE CONTA DO RESPONSÁVEL
     if (isParentRegisterMode) {
       const email = document.getElementById("reg-email-responsavel").value.trim().toLowerCase();
       const ra = document.getElementById("reg-ra-aluno").value.replace(/\s+/g, '');
@@ -1296,7 +1432,6 @@ function executeLogin() {
         return;
       }
 
-      // Cria a nova conta de responsável
       const newParent = {
         id: "p_" + Date.now(),
         name: "Responsável (" + linkedStudent.name + ")",
@@ -1318,7 +1453,6 @@ function executeLogin() {
       showScreen("screen-parent-hub");
 
     } else {
-      // MODO LOGIN TRADICIONAL
       const emailInput = document.getElementById("login-email-responsavel");
       const passInput = document.getElementById("login-password-responsavel");
 
@@ -1351,31 +1485,76 @@ function executeLogin() {
     }
 
   } else {
-    // PROFESSOR
-    const gmailInput = document.getElementById("login-gmail");
-    const passInput = document.getElementById("login-password-professor");
+    if (isTeacherRegisterMode) {
+      const email = document.getElementById("reg-gmail-professor").value.trim().toLowerCase();
+      const pass = document.getElementById("reg-password-professor").value.trim();
+      const passConfirm = document.getElementById("reg-password-confirm-professor").value.trim();
 
-    const email = gmailInput.value.replace(/\s+/g, '').toLowerCase();
-    const pass = passInput.value.trim();
+      if (!email || !pass || !passConfirm) {
+        document.getElementById("login-error").textContent = "Preencha todos os campos do cadastro.";
+        document.getElementById("login-error").style.display = "block";
+        return;
+      }
 
-    const teacher = TEACHERS.find(t => t.email.toLowerCase() === email && t.password === pass);
+      if (!email.endsWith("@gmail.com")) {
+        document.getElementById("login-error").textContent = "Utilize um e-mail válido do Gmail (@gmail.com).";
+        document.getElementById("login-error").style.display = "block";
+        return;
+      }
 
-    if (!teacher) {
-      document.getElementById("login-error").textContent = "Gmail ou senha incorretos.";
-      document.getElementById("login-error").style.display = "block";
-      return;
+      if (pass !== passConfirm) {
+        document.getElementById("login-error").textContent = "As senhas não coincidem. Digite novamente.";
+        document.getElementById("login-error").style.display = "block";
+        return;
+      }
+
+      const newTeacher = {
+        id: "t_" + Date.now(),
+        name: email.split('@')[0],
+        email: email,
+        password: pass
+      };
+
+      TEACHERS.push(newTeacher);
+
+      document.getElementById("login-error").style.display = "none";
+      currentUser = newTeacher;
+      currentUserType = "professor";
+
+      showToast("Conta de professor criada com sucesso!");
+      document.getElementById("hub-teacher-name").textContent = `Olá, ${newTeacher.name}!`;
+      document.getElementById("teacher-avatar-initials").textContent = newTeacher.name.substring(0, 2).toUpperCase();
+
+      switchTeacherTab('aulas');
+      renderTeacherSchedule();
+      showScreen("screen-teacher-hub");
+
+    } else {
+      const gmailInput = document.getElementById("login-gmail");
+      const passInput = document.getElementById("login-password-professor");
+
+      const email = gmailInput.value.replace(/\s+/g, '').toLowerCase();
+      const pass = passInput.value.trim();
+
+      const teacher = TEACHERS.find(t => t.email.toLowerCase() === email && t.password === pass);
+
+      if (!teacher) {
+        document.getElementById("login-error").textContent = "Gmail ou senha incorretos.";
+        document.getElementById("login-error").style.display = "block";
+        return;
+      }
+
+      document.getElementById("login-error").style.display = "none";
+      currentUser = teacher;
+      currentUserType = "professor";
+
+      document.getElementById("hub-teacher-name").textContent = `Olá, ${teacher.name}!`;
+      document.getElementById("teacher-avatar-initials").textContent = "AC";
+
+      switchTeacherTab('aulas');
+      renderTeacherSchedule();
+      showScreen("screen-teacher-hub");
     }
-
-    document.getElementById("login-error").style.display = "none";
-    currentUser = teacher;
-    currentUserType = "professor";
-
-    document.getElementById("hub-teacher-name").textContent = `Olá, ${teacher.name}!`;
-    document.getElementById("teacher-avatar-initials").textContent = "AC";
-
-    switchTeacherTab('aulas');
-    renderTeacherSchedule();
-    showScreen("screen-teacher-hub");
   }
 }
 
@@ -1446,7 +1625,7 @@ function renderTeacherNoticeList() {
   }).join('');
 
   container.querySelectorAll('.btn-delete-notice').forEach(btn => {
-    addFastClick(btn, () => deleteNotice(Number(btn.dataset.id)));
+    addClick(btn, () => deleteNotice(Number(btn.dataset.id)));
   });
 }
 
@@ -1528,7 +1707,7 @@ function renderTeacherSchedule(selectedDay = window.selectedTeacherDay || "Seg")
   });
 
   list.querySelectorAll('.btn-teacher-notify').forEach(btn => {
-    addFastClick(btn, () => {
+    addClick(btn, () => {
       teacherNotifyAbsence(btn.dataset.day, Number(btn.dataset.period));
     });
   });
@@ -1788,7 +1967,7 @@ function renderStudentWeeklyClasses(day = 'Seg'){
     </div>`;
 
   container.querySelectorAll('[data-student-day]').forEach(b => {
-    addFastClick(b, () => renderStudentWeeklyClasses(b.dataset.studentDay));
+    addClick(b, () => renderStudentWeeklyClasses(b.dataset.studentDay));
   });
 
   if(alertsContainer) {
@@ -1811,18 +1990,18 @@ function renderStudentWeeklyClasses(day = 'Seg'){
 document.addEventListener('DOMContentLoaded', () => {
 
   // Login Tabs
-  addFastClick(document.getElementById("tab-aluno"), () => switchLoginTab('aluno'));
-  addFastClick(document.getElementById("tab-professor"), () => switchLoginTab('professor'));
-  addFastClick(document.getElementById("tab-responsavel"), () => switchLoginTab('responsavel'));
+  addClick(document.getElementById("tab-aluno"), () => switchLoginTab('aluno'));
+  addClick(document.getElementById("tab-professor"), () => switchLoginTab('professor'));
+  addClick(document.getElementById("tab-responsavel"), () => switchLoginTab('responsavel'));
 
-  addFastClick(document.getElementById("btn-toggle-parent-mode"), () => toggleParentMode());
+  addClick(document.getElementById("btn-toggle-parent-mode"), () => toggleParentMode());
+  addClick(document.getElementById("btn-toggle-teacher-mode"), () => toggleTeacherMode());
 
   document.getElementById("login-form").addEventListener("submit", (e) => {
     e.preventDefault();
     executeLogin();
   });
 
-  // Formatação dinâmica de RA
   function formatRA(e) {
     let digits = e.target.value.replace(/\D/g, '').slice(0, 13);
     if (digits.length > 12) {
@@ -1836,17 +2015,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById("reg-ra-aluno").addEventListener("input", formatRA);
 
   // Hub Professor
-  addFastClick(document.getElementById("tab-teacher-aulas"), () => switchTeacherTab('aulas'));
-  addFastClick(document.getElementById("tab-teacher-avisos"), () => switchTeacherTab('avisos'));
-  addFastClick(document.getElementById("teacher-logout-btn"), () => {
-    currentUser = null;
-    currentUserType = null;
-    showScreen("screen-login");
-    showToast("Você saiu do sistema.");
-  });
+  addClick(document.getElementById("tab-teacher-aulas"), () => switchTeacherTab('aulas'));
+  addClick(document.getElementById("tab-teacher-avisos"), () => switchTeacherTab('avisos'));
 
   document.querySelectorAll(".teacher-day-btn").forEach(btn => {
-    addFastClick(btn, () => renderTeacherSchedule(btn.dataset.day));
+    addClick(btn, () => renderTeacherSchedule(btn.dataset.day));
   });
 
   document.getElementById("notice-form").addEventListener("submit", (e) => {
@@ -1855,7 +2028,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Hub Aluno
-  addFastClick(document.getElementById("open-face-scan-btn"), () => {
+  addClick(document.getElementById("open-face-scan-btn"), () => {
     if (currentUser.checkedIn) {
       showToast("Presença já registrada para o dia de hoje!");
       return;
@@ -1864,7 +2037,7 @@ document.addEventListener('DOMContentLoaded', () => {
     startCamera();
   });
 
-  addFastClick(document.getElementById("btn-trigger-absence"), () => {
+  addClick(document.getElementById("btn-trigger-absence"), () => {
     if(!currentUser) return;
     const now = new Date();
     const dateString = now.toLocaleDateString('pt-BR');
@@ -1881,12 +2054,12 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast(`Falta do dia informada aos pais (${currentUser.parentEmail})!`);
   });
 
-  addFastClick(document.getElementById("btn-details"), () => {
+  addClick(document.getElementById("btn-details"), () => {
     const relBtn = document.querySelector('[data-target="screen-relatorios"]');
     if (relBtn) relBtn.click();
   });
 
-  addFastClick(document.getElementById("btn-notifications"), () => {
+  addClick(document.getElementById("btn-notifications"), () => {
     if (absenceNotifications.length === 0) {
       showToast("Nenhuma notificação no momento.");
       return;
@@ -1898,11 +2071,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Biometria Facial
-  addFastClick(document.getElementById("back-to-hub-btn"), () => {
+  addClick(document.getElementById("back-to-hub-btn"), () => {
     showScreen("screen-student-hub");
   });
 
-  addFastClick(document.getElementById("confirm-face-btn"), () => {
+  addClick(document.getElementById("confirm-face-btn"), () => {
     const now = new Date();
     const timeString = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     const dateString = now.toLocaleDateString('pt-BR');
@@ -1925,21 +2098,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Navegação Inferior
   document.querySelectorAll(".bottom-nav .nav-item[data-target]").forEach(btn => {
-    addFastClick(btn, function() {
+    addClick(btn, function() {
       document.querySelectorAll(".bottom-nav .nav-item").forEach(i => i.classList.remove("active"));
       this.classList.add("active");
       showScreen(this.getAttribute("data-target"));
     });
   });
 
-  addFastClick(document.getElementById("logout-btn"), () => {
-    currentUser = null;
-    currentUserType = null;
-    showScreen("screen-login");
-    showToast("Você saiu do sistema.");
+  // Modal Logout
+  const modal = document.getElementById("logout-modal");
+
+  document.querySelectorAll(".btn-logout-trigger").forEach(btn => {
+    addClick(btn, () => {
+      modal.classList.add("active");
+    });
   });
 
-  addFastClick(document.getElementById("parent-logout-btn"), () => {
+  addClick(document.getElementById("btn-cancel-logout"), () => {
+    modal.classList.remove("active");
+  });
+
+  addClick(document.getElementById("btn-confirm-logout"), () => {
+    modal.classList.remove("active");
     currentUser = null;
     currentUserType = null;
     currentParent = null;
