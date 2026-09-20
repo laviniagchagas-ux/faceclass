@@ -2,6 +2,7 @@ package br.com.faceclass
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -39,7 +40,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -68,11 +68,16 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import br.com.faceclass.data.Attendance
 import br.com.faceclass.data.ClassDashboard
 import br.com.faceclass.data.Lesson
 import br.com.faceclass.data.LatenessSummary
+import br.com.faceclass.ui.screens.FaceClassLoginScreen
+import br.com.faceclass.ui.screens.FaceClassParentHome
+import br.com.faceclass.ui.screens.FaceClassStudentHome
+import br.com.faceclass.ui.screens.FaceClassTeacherHome
 import br.com.faceclass.ui.theme.FaceClassTheme
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
@@ -102,16 +107,25 @@ private data class FaceReaderStatus(
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
-        setContent { FaceClassTheme { FaceClassApp() } }
+        window.setBackgroundDrawable(ColorDrawable(android.graphics.Color.rgb(248, 249, 254)))
+        setContent {
+            FaceClassTheme {
+                Surface(modifier = Modifier.fillMaxSize(), color = AppBackground) {
+                    FaceClassApp()
+                }
+            }
+        }
     }
+
 }
 
 @Composable
 private fun FaceClassApp(viewModel: FaceClassViewModel = viewModel()) {
     val state by viewModel.state
     when (val user = state.user) {
-        null -> LoginScreen(
+        null -> FaceClassLoginScreen(
             loading = state.isLoading,
             message = state.message,
             onLogin = viewModel::login,
@@ -143,6 +157,12 @@ private fun FaceClassApp(viewModel: FaceClassViewModel = viewModel()) {
                 onLoadDashboard = viewModel::loadDashboard,
                 onLogout = viewModel::logout,
                 onClearMessage = viewModel::clearMessage,
+            )
+
+            "RESPONSAVEL" -> FaceClassParentHome(
+                name = user.nome,
+                attendance = state.attendance,
+                onLogout = viewModel::logout,
             )
 
             else -> AdminHome(name = user.nome, onLogout = viewModel::logout)
@@ -241,7 +261,6 @@ private fun StudentHome(
     onLogout: () -> Unit,
     onClearMessage: () -> Unit,
 ) {
-    var tab by rememberSaveable { mutableStateOf(StudentTab.HOME) }
     var selectedLesson by remember { mutableStateOf<Lesson?>(null) }
     var registeringFace by remember { mutableStateOf(false) }
 
@@ -270,29 +289,19 @@ private fun StudentHome(
         return
     }
 
-    Column(Modifier.fillMaxSize().background(AppBackground)) {
-        StudentHeader(name = name, onRefresh = onRefresh, refreshing = loading)
-        Box(Modifier.weight(1f)) {
-            when (tab) {
-                StudentTab.HOME -> StudentDashboard(
-                    name = name,
-                    lessons = lessons,
-                    attendance = attendance,
-                    faceRegistered = faceRegistered,
-                    loading = loading,
-                    message = message,
-                    onClearMessage = onClearMessage,
-                    onChooseLesson = { selectedLesson = it },
-                    onEnrollFace = { registeringFace = true },
-                )
-
-                StudentTab.LESSONS -> StudentLessons(lessons, onChooseLesson = { selectedLesson = it })
-                StudentTab.REPORTS -> StudentReports(attendance)
-                StudentTab.LATENESS -> StudentLateness(lateness, loading)
-            }
-        }
-        StudentBottomNavigation(tab = tab, onTabChange = { tab = it }, onLogout = onLogout)
-    }
+    FaceClassStudentHome(
+        name = name,
+        lessons = lessons,
+        attendance = attendance,
+        faceRegistered = faceRegistered,
+        loading = loading,
+        message = message,
+        onRefresh = onRefresh,
+        onOpenFace = { selectedLesson = it },
+        onEnrollFace = { registeringFace = true },
+        onLogout = onLogout,
+        onClearMessage = onClearMessage,
+    )
 }
 
 private enum class StudentTab { HOME, LESSONS, LATENESS, REPORTS }
@@ -775,42 +784,7 @@ private fun TeacherHome(
     onLogout: () -> Unit,
     onClearMessage: () -> Unit,
 ) {
-    var classId by rememberSaveable { mutableStateOf("1") }
-    var subject by rememberSaveable { mutableStateOf("Matemática") }
-    Column(Modifier.fillMaxSize().background(AppBackground)) {
-        SimplePurpleHeader("Painel do professor", "Olá, ${firstName(name)}", onLogout)
-        LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            item {
-                FaceCard {
-                    Text("Abrir chamada", fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge, color = TextMain)
-                    Text("A aula criada fica ativa por uma hora.", color = TextMuted, style = MaterialTheme.typography.bodySmall)
-                    Spacer(Modifier.height(14.dp))
-                    FieldLabel("ID da turma")
-                    OutlinedTextField(classId, { classId = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(14.dp))
-                    Spacer(Modifier.height(10.dp))
-                    FieldLabel("Disciplina")
-                    OutlinedTextField(subject, { subject = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(14.dp))
-                    Spacer(Modifier.height(14.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(onClick = { onCreateLesson(classId, subject) }, enabled = !loading, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)) { Text("Criar aula") }
-                        OutlinedButton(onClick = { onLoadDashboard(classId) }, enabled = !loading, shape = RoundedCornerShape(12.dp)) { Text("Ver painel") }
-                    }
-                    MessageCard(message, onClearMessage)
-                }
-            }
-            if (loading) item { LoadingCard() }
-            dashboard?.let { current ->
-                item { Text("${current.turma} • ${current.ano_letivo}", fontWeight = FontWeight.ExtraBold, color = TextMain) }
-                items(current.alunos, key = { it.id_aluno }) { student ->
-                    FaceCard {
-                        Text(student.nome_aluno, fontWeight = FontWeight.Bold, color = TextMain)
-                        Text("Presentes: ${student.presentes} • Atrasos: ${student.atrasos} • Faltas: ${student.faltas}", color = TextMuted, style = MaterialTheme.typography.bodySmall)
-                        Text("Saldo de atraso: ${student.percentual_atraso_atual}%", color = PrimaryPurple, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
-    }
+    FaceClassTeacherHome(name = name, onLogout = onLogout)
 }
 
 @Composable
