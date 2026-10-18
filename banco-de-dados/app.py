@@ -18,6 +18,7 @@ from banco import transacao
 from emails import enfileirar
 from facial import MODELO, ErroFacial, conferir, extrair, guardar
 
+# Define a pasta do site e cria a aplicação Flask que recebe as requisições.
 RAIZ = Path(__file__).resolve().parent.parent
 app = Flask(
     __name__,
@@ -25,9 +26,11 @@ app = Flask(
     static_url_path="/front-end",
 )
 segredo = os.getenv("APP_SECRET", "")
+# Impede iniciar o site sem a chave que protege as sessões dos usuários.
 if len(segredo) < 32:
     raise RuntimeError("Configure APP_SECRET com uma chave aleatória no .env.")
 
+# Ajusta cookies, tamanho máximo das requisições e duração da sessão.
 app.config.update(
     SECRET_KEY=segredo,
     MAX_CONTENT_LENGTH=4 * 1024 * 1024,
@@ -37,30 +40,36 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
 )
 FUSO = ZoneInfo("America/Sao_Paulo")
+# Hash fictício evita uma resposta mais rápida quando o RA não existe.
 HASH_INEXISTENTE = generate_password_hash(secrets.token_urlsafe(32))
 
 
+# Exceção usada para devolver erros esperados da API com o status correto.
 class ErroAPI(Exception):
     def __init__(self, mensagem, status=400):
         self.mensagem = mensagem
         self.status = status
 
 
+# Converte erros de validação da API em respostas JSON.
 @app.errorhandler(ErroAPI)
 def erro_api(erro):
     return jsonify(erro=erro.mensagem), erro.status
 
 
+# Converte erros de captura ou comparação facial em resposta compreensível.
 @app.errorhandler(ErroFacial)
 def erro_facial(erro):
     return jsonify(erro=str(erro)), 422
 
 
+# Informa conflito quando o banco rejeita um cadastro ou registro duplicado.
 @app.errorhandler(mysql.connector.IntegrityError)
 def erro_integridade(erro):
     return jsonify(erro="Cadastro ou registro duplicado. Confira os dados."), 409
 
 
+# Evita mostrar detalhes internos ao usuário e registra falhas no log do servidor.
 @app.errorhandler(Exception)
 def erro_geral(erro):
     if isinstance(erro, HTTPException):
@@ -69,6 +78,7 @@ def erro_geral(erro):
     return jsonify(erro="Não foi possível concluir. Tente novamente ou avise a equipe."), 503
 
 
+# Evita que respostas da API com informações pessoais sejam guardadas em cache.
 @app.after_request
 def nao_cachear_dados(resposta):
     if request.path not in {"/"} and not request.path.startswith("/front-end/"):
@@ -76,12 +86,14 @@ def nao_cachear_dados(resposta):
     return resposta
 
 
+# Cria e devolve um token usado para proteger ações que alteram dados.
 def csrf():
     if "csrf" not in session:
         session["csrf"] = secrets.token_urlsafe(32)
     return session["csrf"]
 
 
+# Confere origem e token CSRF antes de aceitar operações que alteram informações.
 @app.before_request
 def proteger_requisicao():
     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
@@ -94,6 +106,7 @@ def proteger_requisicao():
             raise ErroAPI("Sessão desatualizada. Recarregue a página.", 403)
 
 
+# Protege rotas que só podem ser usadas após o aluno entrar na conta.
 def autenticado(funcao):
     @wraps(funcao)
     def executar(*args, **kwargs):
@@ -103,6 +116,7 @@ def autenticado(funcao):
     return executar
 
 
+# Lê o corpo JSON da requisição e rejeita dados em formato inesperado.
 def corpo_json():
     dados = request.get_json(silent=True)
     if not isinstance(dados, dict):
@@ -110,6 +124,7 @@ def corpo_json():
     return dados
 
 
+# Valida um campo textual, seu tamanho e caracteres de controle.
 def texto(dados, campo, limite, minimo=1, aparar=True):
     valor = dados.get(campo)
     if not isinstance(valor, str):
@@ -123,6 +138,7 @@ def texto(dados, campo, limite, minimo=1, aparar=True):
     return valor
 
 
+# Normaliza o RA para comparação consistente e rejeita formatos inválidos.
 def ra_normalizado(dados):
     ra = texto(dados, "RA", 30).replace("-", "").replace(" ", "").upper()
     if not re.fullmatch(r"[0-9A-Z]{5,20}", ra):
@@ -130,6 +146,7 @@ def ra_normalizado(dados):
     return ra
 
 
+# Valida e padroniza o endereço de e-mail recebido pela API.
 def email_validado(dados, campo):
     valor = texto(dados, campo, 120).lower()
     if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", valor):
@@ -137,6 +154,7 @@ def email_validado(dados, campo):
     return valor
 
 
+# Confere se um campo é número finito e está dentro do intervalo permitido.
 def numero(dados, campo, minimo, maximo):
     valor = dados.get(campo)
     if isinstance(valor, bool) or not isinstance(valor, (int, float)):
@@ -146,6 +164,7 @@ def numero(dados, campo, minimo, maximo):
     return float(valor)
 
 
+# Calcula a distância aproximada, em metros, entre duas coordenadas GPS.
 def distancia(lat1, lon1, lat2, lon2):
     p1, p2 = math.radians(lat1), math.radians(lat2)
     dp = math.radians(lat2 - lat1)
@@ -154,6 +173,7 @@ def distancia(lat1, lon1, lat2, lon2):
     return 6371000 * 2 * math.asin(math.sqrt(min(1.0, max(0.0, a))))
 
 
+# Valida GPS, precisão e distância em relação às coordenadas da escola.
 def validar_local(dados):
     latitude = numero(dados, "latitude", -90, 90)
     longitude = numero(dados, "longitude", -180, 180)
@@ -177,6 +197,7 @@ def validar_local(dados):
     return latitude, longitude
 
 
+# Seleciona apenas dados do aluno que podem ser devolvidos ao navegador.
 def aluno_publico(linha):
     return {
         "id": linha["id"],
@@ -192,6 +213,7 @@ def aluno_publico(linha):
     }
 
 
+# Busca os dados públicos do aluno e encerra a sessão se a conta não existir.
 def buscar_aluno(cursor, aluno_id):
     cursor.execute(
         """SELECT id, nome, RA, email, nome_responsavel,
@@ -207,6 +229,7 @@ def buscar_aluno(cursor, aluno_id):
     return aluno_publico(linha)
 
 
+# Inicia uma sessão limpa para o aluno e prepara um novo token CSRF.
 def iniciar_sessao(aluno_id):
     session.clear()
     session["aluno_id"] = aluno_id
@@ -214,11 +237,13 @@ def iniciar_sessao(aluno_id):
     return csrf()
 
 
+# Entrega o arquivo inicial do site no endereço raiz.
 @app.get("/")
 def inicio():
     return send_file(RAIZ / "index.html")
 
 
+# Faz uma consulta simples para confirmar que o servidor alcança o MySQL.
 @app.get("/teste-banco")
 def teste_banco():
     with transacao() as (_, cursor):
@@ -227,6 +252,7 @@ def teste_banco():
     return jsonify(mensagem="Conexão com o banco funcionando.")
 
 
+# Informa ao site se há aluno conectado e entrega o token de proteção CSRF.
 @app.get("/sessao")
 def sessao_atual():
     token = csrf()
@@ -237,6 +263,7 @@ def sessao_atual():
     return jsonify(aluno=aluno, csrf_token=token)
 
 
+# Valida os dados, grava o aluno e responsável e cria a sessão após o cadastro.
 @app.post("/alunos")
 def cadastrar_aluno():
     dados = corpo_json()
@@ -251,6 +278,7 @@ def cadastrar_aluno():
     telefone = re.sub(r"\D", "", texto(dados, "telefone_responsavel", 30))
     if len(telefone) not in {10, 11}:
         raise ErroAPI("Informe um telefone com DDD.")
+    # Guarda somente o hash da senha; a senha original não é salva no banco.
     hash_senha = generate_password_hash(senha)
 
     with transacao() as (_, cursor):
@@ -268,6 +296,7 @@ def cadastrar_aluno():
     return jsonify(mensagem="Cadastro realizado.", aluno=aluno, csrf_token=token), 201
 
 
+# Confere RA e senha e inicia uma sessão autenticada para o aluno.
 @app.post("/login")
 def login():
     dados = corpo_json()
@@ -277,6 +306,7 @@ def login():
         cursor.execute("SELECT id, senha FROM aluno WHERE RA=%s", (ra,))
         linha = cursor.fetchone()
 
+    # Usa um hash fictício quando o RA não existe para reduzir diferenças de tempo.
     hash_salvo = linha["senha"] if linha else HASH_INEXISTENTE
     if not hash_salvo.startswith(("scrypt:", "pbkdf2:")):
         raise ErroAPI("A equipe precisa executar a migração das senhas antigas.", 503)
@@ -289,6 +319,7 @@ def login():
     return jsonify(mensagem="Login realizado.", aluno=aluno, csrf_token=token)
 
 
+# Encerra a sessão do aluno e cria um token CSRF para a próxima ação.
 @app.post("/logout")
 @autenticado
 def logout():
@@ -296,6 +327,7 @@ def logout():
     return jsonify(mensagem="Você saiu da conta.", csrf_token=csrf())
 
 
+# Captura o rosto da sessão atual, protege o modelo e salva o cadastro no banco.
 @app.post("/rosto")
 @autenticado
 def cadastrar_rosto():
@@ -322,6 +354,7 @@ def cadastrar_rosto():
     return jsonify(mensagem="Rosto cadastrado.", rosto_cadastrado=True), 201
 
 
+# Registra entrada/saída após validar GPS, rosto, horário e regras do dia.
 @app.post("/presenca")
 @autenticado
 def registrar_presenca():
@@ -337,6 +370,7 @@ def registrar_presenca():
     if re.search(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", motivo):
         raise ErroAPI("O motivo contém caracteres inválidos.")
 
+    # Primeiro obtém o cadastro facial necessário para verificar a captura.
     with transacao() as (_, cursor):
         cursor.execute(
             "SELECT rosto_template, rosto_modelo FROM aluno WHERE id=%s",
@@ -348,11 +382,13 @@ def registrar_presenca():
     if not conferir(dados.get("imagem"), cadastro["rosto_template"], cadastro["rosto_modelo"]):
         raise ErroAPI("O rosto não corresponde ao cadastro. Tente novamente.", 403)
 
+    # Aplica a regra de justificativa quando a saída ocorre antes do horário previsto.
     agora = datetime.now(FUSO)
     horario_saida = time.fromisoformat(os.getenv("HORARIO_SAIDA", "12:10"))
     if tipo == "saida" and agora.time() < horario_saida and not motivo:
         raise ErroAPI("Informe o motivo da saída antecipada.", 422)
 
+    # A gravação da presença e o enfileiramento do e-mail são confirmados juntos.
     with transacao() as (_, cursor):
         cursor.execute(
             """SELECT nome, email_responsavel, rosto_template
@@ -400,6 +436,7 @@ def registrar_presenca():
     ), 201
 
 
+# Lista apenas o histórico do aluno autenticado, com no máximo 100 registros.
 @app.get("/presencas")
 @app.get("/presencas/<int:aluno_id>")
 @autenticado
@@ -426,6 +463,7 @@ def listar_presencas(aluno_id=None):
     return jsonify(presencas=registros, hoje=datetime.now(FUSO).date().isoformat())
 
 
+# Comando administrativo que converte senhas antigas em hashes seguros.
 @app.cli.command("migrar-senhas")
 def migrar_senhas():
     total = 0
@@ -442,5 +480,6 @@ def migrar_senhas():
     click.echo(f"{total} senha(s) antigas convertidas para hash.")
 
 
+# Inicia o servidor local quando este arquivo é executado diretamente.
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=False)

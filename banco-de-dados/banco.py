@@ -5,9 +5,11 @@ from pathlib import Path
 import mysql.connector
 from dotenv import load_dotenv
 
+# Localiza a pasta do backend para carregar a configuração deste projeto.
 BASE = Path(__file__).resolve().parent
 
 
+# Lê as credenciais do banco guardadas no arquivo local .env.
 def carregar_configuracao():
     # No fluxo local, o arquivo salvo pelo assistente é a configuração escolhida.
     # Senhas são literais: não expandir trechos como ${VARIAVEL}.
@@ -17,6 +19,7 @@ def carregar_configuracao():
 carregar_configuracao()
 
 
+# Abre uma conexão MySQL usando os dados definidos no .env.
 def conectar():
     senha = os.getenv("DB_PASSWORD")
     usuario = os.getenv("DB_USER")
@@ -34,6 +37,7 @@ def conectar():
     )
 
 
+# Agrupa operações do banco para confirmar tudo junto ou desfazer em caso de erro.
 @contextmanager
 def transacao():
     conexao = conectar()

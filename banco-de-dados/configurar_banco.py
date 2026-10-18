@@ -14,11 +14,13 @@ BASE = Path(__file__).resolve().parent
 ENV = BASE / ".env"
 
 
+# Pede um valor no terminal e permite aceitar o valor sugerido com Enter.
 def perguntar(rotulo, padrao=""):
     dica = f" [{padrao}]" if padrao else ""
     return input(f"{rotulo}{dica}: ").strip() or padrao
 
 
+# Reúne endereço, banco e usuário; a senha é lida sem aparecer na tela.
 def coletar_configuracao():
     valores = dotenv_values(ENV, interpolate=False)
     usuario = valores.get("DB_USER") or os.getenv("DB_USER", "")
@@ -44,6 +46,7 @@ def coletar_configuracao():
     return configuracao
 
 
+# Tenta entrar no servidor MySQL e verifica se a base informada já existe.
 def testar_conexao(configuracao):
     conexao = mysql.connector.connect(
         host=configuracao["DB_HOST"],
@@ -68,11 +71,13 @@ def testar_conexao(configuracao):
         conexao.close()
 
 
+# Grava os dados de conexão no .env local, sem imprimi-los no terminal.
 def salvar_configuracao(configuracao):
     for chave in ("DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD"):
         set_key(str(ENV), chave, configuracao[chave], quote_mode="always")
 
 
+# Conduz o assistente de configuração e mostra orientações conforme o resultado.
 def main():
     print("FaceClass - configurar MySQL neste computador")
     print("Enter mantém os valores entre colchetes. Gmail pode ficar para depois.")
@@ -105,5 +110,6 @@ def main():
     return 0
 
 
+# Permite iniciar este assistente diretamente pelo terminal.
 if __name__ == "__main__":
     raise SystemExit(main())

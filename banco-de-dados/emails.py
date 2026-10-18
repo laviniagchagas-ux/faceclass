@@ -8,6 +8,7 @@ from email.message import EmailMessage
 from banco import transacao
 
 
+# Insere uma notificação pendente na fila dentro da transação da presença.
 def enfileirar(cursor, presenca_id, destinatario, nome, tipo, momento, motivo):
     assunto = f"FaceClass: {nome} registrou {tipo}"
     corpo = (
@@ -28,6 +29,7 @@ def enfileirar(cursor, presenca_id, destinatario, nome, tipo, momento, motivo):
     )
 
 
+# Reserva com segurança o próximo aviso elegível para um processo de envio.
 def reservar():
     with transacao() as (_, cursor):
         cursor.execute(
@@ -65,6 +67,7 @@ def reservar():
         return aviso
 
 
+# Confere se as variáveis SMTP necessárias estão configuradas antes de iniciar.
 def validar_configuracao():
     if not os.getenv("SMTP_HOST") or not os.getenv("SMTP_FROM"):
         raise RuntimeError("Configure SMTP_HOST e SMTP_FROM antes de iniciar os e-mails.")
@@ -76,6 +79,7 @@ def validar_configuracao():
         raise RuntimeError("SMTP_SECURITY deve ser ssl ou starttls.")
 
 
+# Envia uma notificação reservada usando SMTP e a segurança configurada.
 def enviar(aviso):
     host = os.getenv("SMTP_HOST")
     remetente = os.getenv("SMTP_FROM")
@@ -113,6 +117,7 @@ def enviar(aviso):
             raise RuntimeError("O servidor recusou o destinatário.")
 
 
+# Marca o aviso como enviado ou agenda uma nova tentativa após falha.
 def concluir(aviso, erro=None):
     with transacao() as (_, cursor):
         if erro is None:
@@ -137,6 +142,7 @@ def concluir(aviso, erro=None):
             )
 
 
+# Quando executado diretamente, processa continuamente a fila de notificações.
 if __name__ == "__main__":
     try:
         validar_configuracao()
