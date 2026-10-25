@@ -98,13 +98,22 @@ def csrf():
 def proteger_requisicao():
     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
         origem = request.headers.get("Origin")
-        if origem and origem.rstrip("/") != request.host_url.rstrip("/"):
-            raise ErroAPI("Origem da requisição não permitida.", 403)
+        origem_local = request.host_url.rstrip("/")
+        origens_permitidas = {
+            item.strip().rstrip("/")
+            for item in os.getenv("APP_ORIGENS_PERMITIDAS", "").split(",")
+            if item.strip()
+        }
+
+        if origem:
+            origem = origem.rstrip("/")
+            if origem != origem_local and origem not in origens_permitidas:
+                raise ErroAPI("Origem da requisição não permitida.", 403)
+
         recebido = request.headers.get("X-CSRF-Token", "")
         esperado = session.get("csrf", "")
         if not esperado or not recebido.isascii() or not hmac.compare_digest(recebido, esperado):
             raise ErroAPI("Sessão desatualizada. Recarregue a página.", 403)
-
 
 # Protege rotas que só podem ser usadas após o aluno entrar na conta.
 def autenticado(funcao):
@@ -141,8 +150,8 @@ def texto(dados, campo, limite, minimo=1, aparar=True):
 # Normaliza o RA para comparação consistente e rejeita formatos inválidos.
 def ra_normalizado(dados):
     ra = texto(dados, "RA", 30).replace("-", "").replace(" ", "").upper()
-    if not re.fullmatch(r"[0-9A-Z]{5,20}", ra):
-        raise ErroAPI("Informe um RA válido, sem pontos ou símbolos.")
+    if not re.fullmatch(r"[0-9]{13}[0-9A-Z]", ra):
+        raise ErroAPI("Informe 13 números e o dígito verificador, que pode ser letra ou número.")
     return ra
 
 
