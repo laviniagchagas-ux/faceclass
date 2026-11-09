@@ -447,11 +447,31 @@ if (btnVoltarLogin) {
     });
 }
 
-// Botão de fazer login
+// Botão de fazer login (exige RA válido e senha preenchida)
 const btnLogin = porId("btn-login");
 if (btnLogin) {
     btnLogin.addEventListener("click", () => {
         void executar("mensagem-login", async () => {
+            // Limpa marcações vermelhas de tentativas anteriores
+            ["login-ra", "login-senha"].forEach((id) => {
+                const campo = porId(id);
+                if (campo) campo.style.borderColor = "";
+            });
+
+            const raInput = porId("login-ra") ? porId("login-ra").value : "";
+            const senha = porId("login-senha") ? porId("login-senha").value : "";
+
+            try {
+                validarRA(raInput);
+            } catch (erroRa) {
+                destacarErro("login-ra");
+                throw erroRa;
+            }
+            if (!senha) {
+                destacarErro("login-senha");
+                throw new Error("Digite sua senha.");
+            }
+
             estado.aluno = { id: 999, nome: "Aluno Teste", rosto_cadastrado: true };
             await irParaConta();
         });
