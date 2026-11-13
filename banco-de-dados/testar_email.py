@@ -6,6 +6,7 @@ import uuid
 from emails import enviar, validar_configuracao
 
 
+# Prepara e envia uma mensagem de teste ao próprio remetente, sem registrar presença.
 def main():
     validar_configuracao()
     destinatario = os.environ["SMTP_USER"]
@@ -25,6 +26,7 @@ def main():
     print("E-mail de teste aceito pelo servidor SMTP. Confira a caixa de entrada e o spam.")
 
 
+# Permite rodar o teste de e-mail isoladamente pelo terminal.
 if __name__ == "__main__":
     try:
         main()

@@ -9,6 +9,7 @@ from banco import conectar
 from emails import validar_configuracao
 
 BASE = Path(__file__).resolve().parent
+# Lista os campos mínimos que o backend espera encontrar nas tabelas do sistema.
 CAMPOS = {
     "aluno": {"id", "nome", "RA", "senha", "email", "nome_responsavel",
               "email_responsavel", "telefone_responsavel", "rosto_template",
@@ -21,6 +22,7 @@ CAMPOS = {
 }
 
 
+# Compara metadados do MySQL com a estrutura esperada, sem ler dados pessoais.
 def validar_metadados(tabelas, colunas, indices, chaves):
     """Confere a estrutura sem ler dados de alunos, senhas ou presenças."""
     falhas = []
@@ -98,6 +100,7 @@ def validar_metadados(tabelas, colunas, indices, chaves):
     return falhas
 
 
+# Consulta apenas informações estruturais (tabelas, colunas, índices e vínculos).
 def verificar_schema(cursor):
     """Consulta apenas metadados do banco selecionado na conexão."""
     consultas = (
@@ -119,6 +122,7 @@ def verificar_schema(cursor):
     return validar_metadados(*snapshots)
 
 
+# Confere .env, chaves, modelos, banco e SMTP e imprime o que ainda falta.
 def verificar():
     falhas = []
     if not (BASE / ".env").is_file():
@@ -168,5 +172,6 @@ def verificar():
     return 0
 
 
+# Executa o diagnóstico ao abrir este arquivo diretamente.
 if __name__ == "__main__":
     raise SystemExit(verificar())

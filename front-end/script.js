@@ -55,14 +55,27 @@ function mensagem(id, texto = "", tipo = "erro") {
 
 // Deixa o RA maiúsculo e remove espaços ou traços
 function normalizarRA(valor) {
-    return (valor || "").replace(/[-\s]/g, "").toUpperCase();
+    return String(valor ?? "").replace(/[-\s]/g, "").toUpperCase();
+}
+
+function formatarRA(valor) {
+    const caracteres = String(valor ?? "")
+        .toUpperCase()
+        .replace(/[^0-9A-Z]/g, "")
+        .slice(0, 14);
+
+    if (caracteres.length <= 13) {
+        return caracteres;
+    }
+
+    return `${caracteres.slice(0, 13)}-${caracteres.slice(13)}`;
 }
 
 // Confere se o RA digitado está no formato correto
 function validarRA(valor) {
     const ra = normalizarRA(valor);
-    if (!/^[0-9A-Z]{5,13}$/.test(ra)) {
-        throw new Error("Informe um RA válido com 5 a 13 letras ou números.");
+    if (!/^[0-9]{13}[0-9A-Z]$/.test(ra)) {
+        throw new Error("Informe 13 números e o dígito verificador, que pode ser letra ou número.");
     }
     return ra;
 }
@@ -508,30 +521,9 @@ async function sair() {
     mensagem("mensagem-login", "Você saiu da conta.", "info");
 }
 
-
-/* =================================================================
-   7. BOTÕES E AÇÕES DO UTILIZADOR (CLICKS)
-   ================================================================= */
-
-// Ativa a máscara automática nos campos de RA ao digitar
-["login-ra", "cadastro-ra", "recuperar-ra"].forEach(id => {
-    const campo = porId(id);
-    if (campo) {
-        campo.addEventListener("input", aplicarMascaraRA);
-    }
-});
-
-// Atalho de teste para pular a tela de login direto para o painel
-const btnAtalhoTeste = porId("btn-atalho-teste");
-if (btnAtalhoTeste) {
-    btnAtalhoTeste.addEventListener("click", () => {
-        const dataHoje = new Date().toISOString().split('T')[0];
-        estado.aluno = { id: 999, nome: "Aluno Teste", rosto_cadastrado: true };
-        estado.historicoCarregado = true;
-        estado.hoje = dataHoje;
-        estado.historico = [];
-        mostrarTela("tela-principal");
-        atualizarStatus();
+for (const id of ["login-ra", "cadastro-ra"]) {
+    porId(id).addEventListener("input", (evento) => {
+        evento.target.value = formatarRA(evento.target.value);
     });
 }
 

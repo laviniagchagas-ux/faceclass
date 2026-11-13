@@ -12,16 +12,19 @@ from cryptography.fernet import Fernet, InvalidToken
 from PIL import Image, UnidentifiedImageError
 
 MODELO = "sface-2021dec-v1"
+# Mantém caminhos e recursos compartilhados do processamento facial.
 BASE = Path(__file__).resolve().parent
 TRAVA = Lock()
 detector = None
 reconhecedor = None
 
 
+# Erro específico para capturas que não podem ser analisadas ou comparadas.
 class ErroFacial(Exception):
     pass
 
 
+# Carrega a chave Fernet usada para proteger os vetores faciais armazenados.
 def chave():
     valor = os.getenv("FACE_ENCRYPTION_KEY")
     if not valor:
@@ -29,6 +32,7 @@ def chave():
     return Fernet(valor.encode("ascii"))
 
 
+# Valida a imagem, encontra um único rosto e extrai seu vetor numérico normalizado.
 def extrair(imagem):
     global detector, reconhecedor
 
@@ -99,11 +103,13 @@ def extrair(imagem):
     return (vetor.astype(np.float64) / norma).astype(np.float32)
 
 
+# Serializa e criptografa o vetor facial antes de guardá-lo no banco.
 def guardar(vetor):
     texto = json.dumps(vetor.tolist()).encode("utf-8")
     return chave().encrypt(texto).decode("ascii")
 
 
+# Compara o rosto capturado com o cadastro criptografado e aplica o limite configurado.
 def conferir(imagem, template, modelo):
     if not template:
         raise ErroFacial("Cadastre seu rosto antes de registrar presença.")

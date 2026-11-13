@@ -57,7 +57,7 @@ HASH_TESTE = generate_password_hash(SENHA, method="pbkdf2:sha256:1000")
 ALUNO = {
     "id": 31,
     "nome": "Aluno Exemplo",
-    "RA": "TESTE12345",
+    "RA": "0000123456789X",
     "email": "aluno@example.invalid",
     "nome_responsavel": "Responsavel Exemplo",
     "email_responsavel": "responsavel@example.invalid",
@@ -98,10 +98,16 @@ class Isolado(unittest.TestCase):
 
 class HelpersAPI(Isolado):
     def test_ra_normaliza_sem_perder_zeros(self):
-        self.assertEqual(api.ra_normalizado({"RA": "  0000-ab 123  "}), "0000AB123")
+        self.assertEqual(
+            api.ra_normalizado({"RA": "  0000123456789-X  "}),
+            "0000123456789X",
+        )
 
     def test_ra_rejeita_tipos_simbolos_e_comprimento(self):
-        for valor in (None, [], {}, True, "1234", "A" * 21, "TEST@123", "TEST\t123"):
+        for valor in (
+            None, [], {}, True, "1234", "1" * 15, "A" * 14,
+            "000012345678X9", "1234567890123-", "TEST@123", "TEST\t123",
+        ):
             with self.subTest(valor=valor), self.assertRaises(api.ErroAPI):
                 api.ra_normalizado({"RA": valor})
 
@@ -241,7 +247,7 @@ class SessaoAPI(Isolado):
         token = self.token()
         dados = {
             "nome": ALUNO["nome"],
-            "RA": "teste-12345",
+            "RA": "0000123456789-X",
             "email": ALUNO["email"],
             "senha": SENHA,
             "nome_responsavel": ALUNO["nome_responsavel"],

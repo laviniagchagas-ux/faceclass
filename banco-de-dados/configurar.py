@@ -7,6 +7,7 @@ import secrets
 import urllib.request
 
 BASE = Path(__file__).resolve().parent
+# Endereços e hashes oficiais usados para baixar e conferir os modelos faciais.
 MODELOS = {
     "face_detection_yunet_2023mar.onnx": (
         "https://huggingface.co/opencv/opencv_zoo/resolve/main/models/"
@@ -21,6 +22,7 @@ MODELOS = {
 }
 
 
+# Calcula a impressão digital SHA-256 de um arquivo para conferir sua integridade.
 def hash_arquivo(caminho):
     resumo = hashlib.sha256()
     with caminho.open("rb") as arquivo:
@@ -29,6 +31,7 @@ def hash_arquivo(caminho):
     return resumo.hexdigest()
 
 
+# Baixa os modelos faciais necessários e só os instala se os hashes conferirem.
 def preparar_modelos():
     pasta = BASE / "modelos"
     pasta.mkdir(exist_ok=True)
@@ -56,6 +59,7 @@ def preparar_modelos():
                 temporario.unlink()
 
 
+# Cria o .env local com chaves aleatórias, preservando qualquer arquivo existente.
 def preparar_env():
     destino = BASE / ".env"
     if destino.exists():
@@ -71,6 +75,7 @@ def preparar_env():
     print(".env criado com chaves persistentes. Configure MySQL; Gmail pode ficar para depois.")
 
 
+# Executa a preparação local e encerra com erro claro se alguma etapa falhar.
 if __name__ == "__main__":
     try:
         preparar_modelos()
