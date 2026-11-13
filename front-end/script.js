@@ -668,13 +668,16 @@ if (btnCadastrar) {
             const emailResp = porId("responsavel-email") ? porId("responsavel-email").value.trim() : "";
 
             // Validações que destacam o campo exato em vermelho se falhar
-            if (!nome || nome.length < 3) {
+            // Nome completo obrigatório: pelo menos nome + sobrenome (2 palavras com 2+ letras)
+            const partesNome = nome.split(/\s+/).filter(p => p.length >= 2);
+            if (!nome || partesNome.length < 2) {
                 destacarErro("cadastro-nome");
-                throw new Error("Preencha o nome completo do aluno (mínimo de 3 letras).");
+                throw new Error("Preencha o nome completo (nome e sobrenome).");
             }
-            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            // E-mail obrigatório e só aceita Gmail ou Hotmail
+            if (!email || !/^[^\s@]+@(gmail\.com|hotmail\.com|hotmail\.com\.br)$/i.test(email)) {
                 destacarErro("cadastro-email");
-                throw new Error("Preencha um e-mail válido para o aluno.");
+                throw new Error("Use um e-mail @gmail.com ou @hotmail.com.");
             }
             try {
                 validarRA(raInput);
