@@ -24,6 +24,7 @@ const estado = {
 };
 
 let consultaHistorico = null;
+let intervaloDeteccao = null;
 
 
 /* =================================================================
@@ -178,8 +179,63 @@ async function api(caminho, dados) {
    5. CONTROLO DA CÂMARA E DAS TELAS
    ================================================================= */
 
+// Para o loop de verificação facial quando a câmera fecha
+function pararDeteccaoFacial() {
+    if (intervaloDeteccao) {
+        clearInterval(intervaloDeteccao);
+        intervaloDeteccao = null;
+    }
+}
+
+// Verifica continuamente se há um rosto visível no vídeo da câmera
+function iniciarDeteccaoFacial(camera, versao) {
+    pararDeteccaoFacial();
+
+    // Usa a API nativa FaceDetector (suportada no Chrome/Edge/Android)
+    const temDetectorNativo = "FaceDetector" in window;
+    const detector = temDetectorNativo ? new window.FaceDetector({ fastMode: true, maxDetectedFaces: 2 }) : null;
+
+    intervaloDeteccao = setInterval(async () => {
+        if (estado.tela !== "tela-facial" || versao !== estado.cameraVersao || !estado.stream) {
+            pararDeteccaoFacial();
+            return;
+        }
+
+        if (camera.readyState < 2) return;
+
+        if (detector) {
+            try {
+                const rostos = await detector.detect(camera);
+                if (rostos.length === 1) {
+                    estado.cameraPronta = true;
+                    mensagem("mensagem-facial", "Rosto detectado! Clique em Confirmar.", "sucesso");
+                } else if (rostos.length > 1) {
+                    estado.cameraPronta = false;
+                    mensagem("mensagem-facial", "Mais de um rosto detectado. Deixe apenas você na câmera.", "erro");
+                } else {
+                    estado.cameraPronta = false;
+                    mensagem("mensagem-facial", "Nenhum rosto detectado. Posicione seu rosto na câmera.", "info");
+                }
+            } catch {
+                estado.cameraPronta = false;
+            }
+        } else {
+            // Fallback para navegadores sem FaceDetector (ex: Firefox/Safari):
+            // exige que o vídeo esteja ativo e com imagem válida
+            const foto = capturarFoto();
+            estado.cameraPronta = Boolean(foto && foto.length > 1500);
+            if (estado.cameraPronta) {
+                mensagem("mensagem-facial", "Câmera ativa. Posicione seu rosto e confirme.", "sucesso");
+            }
+        }
+
+        atualizarBotoes();
+    }, 500);
+}
+
 // Desliga a câmara e limpa a memória dela
 function pararCamera() {
+    pararDeteccaoFacial();
     estado.cameraVersao += 1;
     estado.cameraPronta = false;
     if (estado.stream) estado.stream.getTracks().forEach((track) => track.stop());
@@ -227,7 +283,7 @@ function atualizarBotoes() {
         if (el) el.disabled = bloqueado;
     });
     const btnFacial = porId("btn-cadastrar-facial");
-    if (btnFacial) btnFacial.disabled = bloqueado || !estado.cameraPronta;
+    if (btnFacial) btnFacial.disabled = bloqueado || !estado.cameraPronta || !estado.stream;
     
     const registros = registrosHoje();
     const entrada = registros.some((registro) => registro.tipo === "entrada");
@@ -364,7 +420,7 @@ async function irParaConta() {
     await carregarHistorico();
 }
 
-// Liga a câmara do telemóvel ou computador
+// Liga a câmara do telemóvel ou computador (obrigatória para confirmar presença)
 async function abrirCamera() {
     pararCamera();
     const versao = estado.cameraVersao;
@@ -384,13 +440,18 @@ async function abrirCamera() {
         if (!camera) return;
         camera.srcObject = stream;
         await camera.play();
-        estado.cameraPronta = true;
-        mensagem("mensagem-facial", "Câmera pronta. Deixe somente seu rosto na imagem.", "sucesso");
+
+        mensagem("mensagem-facial", "Procurando rosto na câmera...", "info");
+        iniciarDeteccaoFacial(camera, versao);
     } catch {
         if (versao !== estado.cameraVersao) return;
         pararCamera();
-        mensagem("mensagem-facial", "Câmera simulada ou indisponível. Clique em cadastrar/confirmar para prosseguir.", "info");
-        estado.cameraPronta = true; 
+        estado.cameraPronta = false;
+        mensagem(
+            "mensagem-facial",
+            "Não foi possível acessar a câmera. Permita o uso da câmera para registrar presença.",
+            "erro"
+        );
     } finally {
         atualizarBotoes();
     }
@@ -405,7 +466,7 @@ async function prepararFacial(tipo, motivo = "") {
     const btnCancelarFacial = porId("btn-cancelar-facial");
 
     if (tituloFacial) tituloFacial.textContent = tipo === "cadastro" ? "Cadastro facial" : "Confirmar " + tipo;
-    if (subtituloFacial) subtituloFacial.textContent = "Modo de teste ativado.";
+    if (subtituloFacial) subtituloFacial.textContent = "Posicione seu rosto de frente para a câmera.";
     if (btnCadastrarFacial) btnCadastrarFacial.textContent = "Confirmar";
     if (btnCancelarFacial) btnCancelarFacial.textContent = "Cancelar";
     
@@ -413,9 +474,17 @@ async function prepararFacial(tipo, motivo = "") {
     void abrirCamera();
 }
 
-// Tira a foto (simulada para testes)
+// Captura o quadro atual real da câmera no canvas
 function capturarFoto() {
-    return "data:image/jpeg;base64,mock";
+    const camera = porId("camera");
+    const canvas = porId("canvas-rosto");
+    if (!camera || !canvas || !camera.videoWidth || !camera.videoHeight) return null;
+
+    canvas.width = camera.videoWidth;
+    canvas.height = camera.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(camera, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.85);
 }
 
 // Pega a localização do GPS (simulada para testes)
@@ -679,13 +748,36 @@ if (btnConfirmarSaida) {
     });
 }
 
-// Botão para confirmar o reconhecimento facial
+// Botão para reabrir a câmera caso tenha falhado
+const btnReabrirCamera = porId("btn-reabrir-camera");
+if (btnReabrirCamera) {
+    btnReabrirCamera.addEventListener("click", () => {
+        void abrirCamera();
+    });
+}
+
+// Botão para confirmar o reconhecimento facial (exige rosto na câmera)
 const btnCadastrarFacial = porId("btn-cadastrar-facial");
 if (btnCadastrarFacial) {
     btnCadastrarFacial.addEventListener("click", () => {
         void executar("mensagem-facial", async () => {
+            if (!estado.stream || !estado.cameraPronta) {
+                throw new Error("É obrigatório posicionar um rosto na câmera para confirmar.");
+            }
+
+            const foto = capturarFoto();
+            if (!foto) {
+                throw new Error("Não foi possível capturar a imagem do seu rosto.");
+            }
+
             const acao = estado.acaoFacial || { tipo: "entrada" };
-            await api("/presenca", { tipo: acao.tipo, motivo_saida: acao.motivo || "" });
+            const rota = acao.tipo === "cadastro" ? "/rosto" : "/presenca";
+            await api(rota, { tipo: acao.tipo, motivo_saida: acao.motivo || "", foto });
+
+            if (acao.tipo === "cadastro" && estado.aluno) {
+                estado.aluno.rosto_cadastrado = true;
+            }
+
             mostrarTela("tela-principal");
             const campoMotivo = porId("campo-motivo-saida");
             if (campoMotivo) campoMotivo.classList.add("escondida");
