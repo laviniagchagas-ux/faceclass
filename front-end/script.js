@@ -60,10 +60,30 @@ function normalizarRA(valor) {
 // Confere se o RA digitado está no formato correto
 function validarRA(valor) {
     const ra = normalizarRA(valor);
-    if (!/^[0-9A-Z]{5,20}$/.test(ra)) {
-        throw new Error("Informe um RA válido com 5 a 20 letras ou números.");
+    if (!/^[0-9A-Z]{5,13}$/.test(ra)) {
+        throw new Error("Informe um RA válido com 5 a 13 letras ou números.");
     }
     return ra;
+}
+
+// Função para formatar o RA colocando o hífen apenas quando todos os dígitos forem preenchidos
+function aplicarMascaraRA(event) {
+    let input = event.target;
+    let valor = input.value.replace(/\D/g, ""); // Remove tudo que não for número
+    
+    // Tamanho total do RA completo sem o hífen (13 dígitos: 12 números + 1 dígito)
+    const tamanhoMaximo = 13; 
+
+    // Se atingiu o tamanho máximo, aplica o hífen separando o último dígito
+    if (valor.length >= tamanhoMaximo) {
+        valor = valor.substring(0, tamanhoMaximo); // Garante que não passe do limite
+        let corpo = valor.slice(0, -1);
+        let digito = valor.slice(-1);
+        input.value = corpo + "-" + digito;
+    } else {
+        // Enquanto estiver digitando e não completar, exibe apenas os números normais sem hífen
+        input.value = valor;
+    }
 }
 
 // Muda o formato da data de ano-mes-dia para dia/mes/ano
@@ -122,6 +142,12 @@ async function api(caminho, dados) {
             aluno: dados 
         };
     }
+    if (caminho === "/recuperar-senha") {
+        return {
+            csrf_token: "token-teste",
+            mensagem: "Link de recuperação enviado."
+        };
+    }
     if (caminho === "/presencas") {
         const dataHoje = new Date().toISOString().split('T')[0];
         return { hoje: estado.hoje || dataHoje, presencas: estado.historico };
@@ -173,7 +199,7 @@ function pararCamera() {
 // Mostra apenas a tela que a gente quer e esconde as outras
 function mostrarTela(id) {
     if (id !== "tela-facial") pararCamera();
-    ["tela-login", "tela-cadastro", "tela-facial", "tela-principal"].forEach((tela) => {
+    ["tela-login", "tela-cadastro", "tela-recuperar", "tela-facial", "tela-principal"].forEach((tela) => {
         const el = porId(tela);
         if (el) el.classList.toggle("escondida", tela !== id);
     });
@@ -193,7 +219,8 @@ function atualizarBotoes() {
         const el = porId(id);
         if (el) el.disabled = bloqueado || !estado.sessaoConhecida;
     });
-    ["btn-primeiro-acesso", "btn-voltar-login", "btn-atualizar-login",
+    ["btn-primeiro-acesso", "btn-voltar-login", "btn-esqueceu-senha",
+        "btn-voltar-login-recuperar", "btn-enviar-recuperacao", "btn-atualizar-login",
         "btn-sair", "btn-cancelar-facial", "btn-reabrir-camera",
         "btn-atualizar", "btn-confirmar-saida"].forEach((id) => {
         const el = porId(id);
@@ -225,6 +252,7 @@ async function executar(idMensagem, acao) {
         const destino = {
             "tela-login": "mensagem-login",
             "tela-cadastro": "mensagem-cadastro",
+            "tela-recuperar": "mensagem-recuperar",
             "tela-facial": "mensagem-facial",
             "tela-principal": "mensagem-principal",
         }[estado.tela] || idMensagem;
@@ -407,6 +435,14 @@ async function sair() {
    7. BOTÕES E AÇÕES DO UTILIZADOR (CLICKS)
    ================================================================= */
 
+// Ativa a máscara automática nos campos de RA ao digitar
+["login-ra", "cadastro-ra", "recuperar-ra"].forEach(id => {
+    const campo = porId(id);
+    if (campo) {
+        campo.addEventListener("input", aplicarMascaraRA);
+    }
+});
+
 // Atalho de teste para pular a tela de login direto para o painel
 const btnAtalhoTeste = porId("btn-atalho-teste");
 if (btnAtalhoTeste) {
@@ -428,7 +464,10 @@ if (btnPrimeiroAcesso) {
         const cadRa = porId("cadastro-ra");
         const logRa = porId("login-ra");
         const cadSenha = porId("cadastro-senha");
-        if (cadRa && logRa) cadRa.value = normalizarRA(logRa.value);
+        if (cadRa && logRa) {
+            cadRa.value = logRa.value;
+            cadRa.dispatchEvent(new Event("input"));
+        }
         if (cadSenha) cadSenha.value = "";
         limparErrosCadastro();
         mensagem("mensagem-cadastro");
@@ -444,6 +483,71 @@ if (btnVoltarLogin) {
         if (cadSenha) cadSenha.value = "";
         limparErrosCadastro();
         mostrarTela("tela-login");
+    });
+}
+
+// Botão para abrir a tela de recuperar senha
+const btnEsqueceuSenha = porId("btn-esqueceu-senha");
+if (btnEsqueceuSenha) {
+    btnEsqueceuSenha.addEventListener("click", () => {
+        const recRa = porId("recuperar-ra");
+        const logRa = porId("login-ra");
+        const recEmail = porId("recuperar-email");
+
+        if (recRa) {
+            recRa.style.borderColor = "";
+            recRa.value = logRa ? logRa.value : "";
+            recRa.dispatchEvent(new Event("input"));
+        }
+        if (recEmail) {
+            recEmail.style.borderColor = "";
+            recEmail.value = "";
+        }
+        mensagem("mensagem-recuperar");
+        mostrarTela("tela-recuperar");
+    });
+}
+
+// Botão para voltar da recuperação para o login
+const btnVoltarLoginRecuperar = porId("btn-voltar-login-recuperar");
+if (btnVoltarLoginRecuperar) {
+    btnVoltarLoginRecuperar.addEventListener("click", () => {
+        mostrarTela("tela-login");
+    });
+}
+
+// Botão de enviar link de recuperação
+const btnEnviarRecuperacao = porId("btn-enviar-recuperacao");
+if (btnEnviarRecuperacao) {
+    btnEnviarRecuperacao.addEventListener("click", () => {
+        void executar("mensagem-recuperar", async () => {
+            const campoRa = porId("recuperar-ra");
+            const campoEmail = porId("recuperar-email");
+            if (campoRa) campoRa.style.borderColor = "";
+            if (campoEmail) campoEmail.style.borderColor = "";
+
+            const raInput = campoRa ? campoRa.value : "";
+            const email = campoEmail ? campoEmail.value.trim() : "";
+
+            try {
+                validarRA(raInput);
+            } catch (erroRa) {
+                destacarErro("recuperar-ra");
+                throw erroRa;
+            }
+
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                destacarErro("recuperar-email");
+                throw new Error("Informe um e-mail válido.");
+            }
+
+            await api("/recuperar-senha", { RA: normalizarRA(raInput), email });
+            mensagem(
+                "mensagem-recuperar",
+                "Se os dados estiverem corretos, enviamos um link de redefinição para o seu e-mail.",
+                "sucesso"
+            );
+        });
     });
 }
 
