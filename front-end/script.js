@@ -60,10 +60,30 @@ function normalizarRA(valor) {
 // Confere se o RA digitado está no formato correto
 function validarRA(valor) {
     const ra = normalizarRA(valor);
-    if (!/^[0-9A-Z]{5,20}$/.test(ra)) {
-        throw new Error("Informe um RA válido com 5 a 20 letras ou números.");
+    if (!/^[0-9A-Z]{5,13}$/.test(ra)) {
+        throw new Error("Informe um RA válido com 5 a 13 letras ou números.");
     }
     return ra;
+}
+
+// Função para formatar o RA colocando o hífen apenas quando todos os dígitos forem preenchidos
+function aplicarMascaraRA(event) {
+    let input = event.target;
+    let valor = input.value.replace(/\D/g, ""); // Remove tudo que não for número
+    
+    // Defina aqui o tamanho total do RA completo (ex: 10 caracteres no total)
+    const tamanhoMaximo = 13; 
+
+    // Se atingiu o tamanho máximo, aplica o hífen separando o último dígito
+    if (valor.length >= tamanhoMaximo) {
+        valor = valor.substring(0, tamanhoMaximo); // Garante que não passe do limite
+        let corpo = valor.slice(0, -1);
+        let digito = valor.slice(-1);
+        input.value = corpo + "-" + digito;
+    } else {
+        // Enquanto estiver digitando e não completar, exibe apenas os números normais sem hífen
+        input.value = valor;
+    }
 }
 
 // Muda o formato da data de ano-mes-dia para dia/mes/ano
@@ -406,6 +426,14 @@ async function sair() {
 /* =================================================================
    7. BOTÕES E AÇÕES DO UTILIZADOR (CLICKS)
    ================================================================= */
+
+// Ativa a máscara automática nos campos de RA ao digitar
+["login-ra", "cadastro-ra"].forEach(id => {
+    const campo = porId(id);
+    if (campo) {
+        campo.addEventListener("input", aplicarMascaraRA);
+    }
+});
 
 // Atalho de teste para pular a tela de login direto para o painel
 const btnAtalhoTeste = porId("btn-atalho-teste");
