@@ -24,6 +24,7 @@ const estado = {
 };
 
 let consultaHistorico = null;
+let intervaloDeteccao = null;
 
 
 /* =================================================================
@@ -77,6 +78,35 @@ function validarRA(valor) {
         throw new Error("Informe 13 números e o dígito verificador, que pode ser letra ou número.");
     }
     return ra;
+}
+
+// Exige o RA completo (12 números + 1 dígito = 13 números) - usado no login
+function validarRACompleto(valor) {
+    const ra = normalizarRA(valor);
+    if (!/^\d{13}$/.test(ra)) {
+        throw new Error("Preencha o RA completo (12 números + dígito).");
+    }
+    return ra;
+}
+
+// Função para formatar o RA colocando o hífen apenas quando todos os dígitos forem preenchidos
+function aplicarMascaraRA(event) {
+    let input = event.target;
+    let valor = input.value.replace(/\D/g, ""); // Remove tudo que não for número
+    
+    // Tamanho total do RA completo sem o hífen (13 dígitos: 12 números + 1 dígito)
+    const tamanhoMaximo = 13; 
+
+    // Se atingiu o tamanho máximo, aplica o hífen separando o último dígito
+    if (valor.length >= tamanhoMaximo) {
+        valor = valor.substring(0, tamanhoMaximo); // Garante que não passe do limite
+        let corpo = valor.slice(0, -1);
+        let digito = valor.slice(-1);
+        input.value = corpo + "-" + digito;
+    } else {
+        // Enquanto estiver digitando e não completar, exibe apenas os números normais sem hífen
+        input.value = valor;
+    }
 }
 
 // Muda o formato da data de ano-mes-dia para dia/mes/ano
@@ -135,6 +165,12 @@ async function api(caminho, dados) {
             aluno: dados 
         };
     }
+    if (caminho === "/recuperar-senha") {
+        return {
+            csrf_token: "token-teste",
+            mensagem: "Link de recuperação enviado."
+        };
+    }
     if (caminho === "/presencas") {
         const dataHoje = new Date().toISOString().split('T')[0];
         return { hoje: estado.hoje || dataHoje, presencas: estado.historico };
@@ -165,8 +201,63 @@ async function api(caminho, dados) {
    5. CONTROLO DA CÂMARA E DAS TELAS
    ================================================================= */
 
+// Para o loop de verificação facial quando a câmera fecha
+function pararDeteccaoFacial() {
+    if (intervaloDeteccao) {
+        clearInterval(intervaloDeteccao);
+        intervaloDeteccao = null;
+    }
+}
+
+// Verifica continuamente se há um rosto visível no vídeo da câmera
+function iniciarDeteccaoFacial(camera, versao) {
+    pararDeteccaoFacial();
+
+    // Usa a API nativa FaceDetector (suportada no Chrome/Edge/Android)
+    const temDetectorNativo = "FaceDetector" in window;
+    const detector = temDetectorNativo ? new window.FaceDetector({ fastMode: true, maxDetectedFaces: 2 }) : null;
+
+    intervaloDeteccao = setInterval(async () => {
+        if (estado.tela !== "tela-facial" || versao !== estado.cameraVersao || !estado.stream) {
+            pararDeteccaoFacial();
+            return;
+        }
+
+        if (camera.readyState < 2) return;
+
+        if (detector) {
+            try {
+                const rostos = await detector.detect(camera);
+                if (rostos.length === 1) {
+                    estado.cameraPronta = true;
+                    mensagem("mensagem-facial", "Rosto detectado! Clique em Confirmar.", "sucesso");
+                } else if (rostos.length > 1) {
+                    estado.cameraPronta = false;
+                    mensagem("mensagem-facial", "Mais de um rosto detectado. Deixe apenas você na câmera.", "erro");
+                } else {
+                    estado.cameraPronta = false;
+                    mensagem("mensagem-facial", "Nenhum rosto detectado. Posicione seu rosto na câmera.", "info");
+                }
+            } catch {
+                estado.cameraPronta = false;
+            }
+        } else {
+            // Fallback para navegadores sem FaceDetector (ex: Firefox/Safari):
+            // exige que o vídeo esteja ativo e com imagem válida
+            const foto = capturarFoto();
+            estado.cameraPronta = Boolean(foto && foto.length > 1500);
+            if (estado.cameraPronta) {
+                mensagem("mensagem-facial", "Câmera ativa. Posicione seu rosto e confirme.", "sucesso");
+            }
+        }
+
+        atualizarBotoes();
+    }, 500);
+}
+
 // Desliga a câmara e limpa a memória dela
 function pararCamera() {
+    pararDeteccaoFacial();
     estado.cameraVersao += 1;
     estado.cameraPronta = false;
     if (estado.stream) estado.stream.getTracks().forEach((track) => track.stop());
@@ -186,7 +277,7 @@ function pararCamera() {
 // Mostra apenas a tela que a gente quer e esconde as outras
 function mostrarTela(id) {
     if (id !== "tela-facial") pararCamera();
-    ["tela-login", "tela-cadastro", "tela-facial", "tela-principal"].forEach((tela) => {
+    ["tela-login", "tela-cadastro", "tela-recuperar", "tela-facial", "tela-principal"].forEach((tela) => {
         const el = porId(tela);
         if (el) el.classList.toggle("escondida", tela !== id);
     });
@@ -206,14 +297,15 @@ function atualizarBotoes() {
         const el = porId(id);
         if (el) el.disabled = bloqueado || !estado.sessaoConhecida;
     });
-    ["btn-primeiro-acesso", "btn-voltar-login", "btn-atualizar-login",
+    ["btn-primeiro-acesso", "btn-voltar-login", "btn-esqueceu-senha",
+        "btn-voltar-login-recuperar", "btn-enviar-recuperacao", "btn-atualizar-login",
         "btn-sair", "btn-cancelar-facial", "btn-reabrir-camera",
         "btn-atualizar", "btn-confirmar-saida"].forEach((id) => {
         const el = porId(id);
         if (el) el.disabled = bloqueado;
     });
     const btnFacial = porId("btn-cadastrar-facial");
-    if (btnFacial) btnFacial.disabled = bloqueado || !estado.cameraPronta;
+    if (btnFacial) btnFacial.disabled = bloqueado || !estado.cameraPronta || !estado.stream;
     
     const registros = registrosHoje();
     const entrada = registros.some((registro) => registro.tipo === "entrada");
@@ -238,6 +330,7 @@ async function executar(idMensagem, acao) {
         const destino = {
             "tela-login": "mensagem-login",
             "tela-cadastro": "mensagem-cadastro",
+            "tela-recuperar": "mensagem-recuperar",
             "tela-facial": "mensagem-facial",
             "tela-principal": "mensagem-principal",
         }[estado.tela] || idMensagem;
@@ -349,7 +442,7 @@ async function irParaConta() {
     await carregarHistorico();
 }
 
-// Liga a câmara do telemóvel ou computador
+// Liga a câmara do telemóvel ou computador (obrigatória para confirmar presença)
 async function abrirCamera() {
     pararCamera();
     const versao = estado.cameraVersao;
@@ -369,13 +462,18 @@ async function abrirCamera() {
         if (!camera) return;
         camera.srcObject = stream;
         await camera.play();
-        estado.cameraPronta = true;
-        mensagem("mensagem-facial", "Câmera pronta. Deixe somente seu rosto na imagem.", "sucesso");
+
+        mensagem("mensagem-facial", "Procurando rosto na câmera...", "info");
+        iniciarDeteccaoFacial(camera, versao);
     } catch {
         if (versao !== estado.cameraVersao) return;
         pararCamera();
-        mensagem("mensagem-facial", "Câmera simulada ou indisponível. Clique em cadastrar/confirmar para prosseguir.", "info");
-        estado.cameraPronta = true; 
+        estado.cameraPronta = false;
+        mensagem(
+            "mensagem-facial",
+            "Não foi possível acessar a câmera. Permita o uso da câmera para registrar presença.",
+            "erro"
+        );
     } finally {
         atualizarBotoes();
     }
@@ -390,7 +488,7 @@ async function prepararFacial(tipo, motivo = "") {
     const btnCancelarFacial = porId("btn-cancelar-facial");
 
     if (tituloFacial) tituloFacial.textContent = tipo === "cadastro" ? "Cadastro facial" : "Confirmar " + tipo;
-    if (subtituloFacial) subtituloFacial.textContent = "Modo de teste ativado.";
+    if (subtituloFacial) subtituloFacial.textContent = "Posicione seu rosto de frente para a câmera.";
     if (btnCadastrarFacial) btnCadastrarFacial.textContent = "Confirmar";
     if (btnCancelarFacial) btnCancelarFacial.textContent = "Cancelar";
     
@@ -398,9 +496,17 @@ async function prepararFacial(tipo, motivo = "") {
     void abrirCamera();
 }
 
-// Tira a foto (simulada para testes)
+// Captura o quadro atual real da câmera no canvas
 function capturarFoto() {
-    return "data:image/jpeg;base64,mock";
+    const camera = porId("camera");
+    const canvas = porId("canvas-rosto");
+    if (!camera || !canvas || !camera.videoWidth || !camera.videoHeight) return null;
+
+    canvas.width = camera.videoWidth;
+    canvas.height = camera.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(camera, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.85);
 }
 
 // Pega a localização do GPS (simulada para testes)
@@ -428,7 +534,10 @@ if (btnPrimeiroAcesso) {
         const cadRa = porId("cadastro-ra");
         const logRa = porId("login-ra");
         const cadSenha = porId("cadastro-senha");
-        if (cadRa && logRa) cadRa.value = normalizarRA(logRa.value);
+        if (cadRa && logRa) {
+            cadRa.value = logRa.value;
+            cadRa.dispatchEvent(new Event("input"));
+        }
         if (cadSenha) cadSenha.value = "";
         limparErrosCadastro();
         mensagem("mensagem-cadastro");
@@ -447,6 +556,71 @@ if (btnVoltarLogin) {
     });
 }
 
+// Botão para abrir a tela de recuperar senha
+const btnEsqueceuSenha = porId("btn-esqueceu-senha");
+if (btnEsqueceuSenha) {
+    btnEsqueceuSenha.addEventListener("click", () => {
+        const recRa = porId("recuperar-ra");
+        const logRa = porId("login-ra");
+        const recEmail = porId("recuperar-email");
+
+        if (recRa) {
+            recRa.style.borderColor = "";
+            recRa.value = logRa ? logRa.value : "";
+            recRa.dispatchEvent(new Event("input"));
+        }
+        if (recEmail) {
+            recEmail.style.borderColor = "";
+            recEmail.value = "";
+        }
+        mensagem("mensagem-recuperar");
+        mostrarTela("tela-recuperar");
+    });
+}
+
+// Botão para voltar da recuperação para o login
+const btnVoltarLoginRecuperar = porId("btn-voltar-login-recuperar");
+if (btnVoltarLoginRecuperar) {
+    btnVoltarLoginRecuperar.addEventListener("click", () => {
+        mostrarTela("tela-login");
+    });
+}
+
+// Botão de enviar link de recuperação
+const btnEnviarRecuperacao = porId("btn-enviar-recuperacao");
+if (btnEnviarRecuperacao) {
+    btnEnviarRecuperacao.addEventListener("click", () => {
+        void executar("mensagem-recuperar", async () => {
+            const campoRa = porId("recuperar-ra");
+            const campoEmail = porId("recuperar-email");
+            if (campoRa) campoRa.style.borderColor = "";
+            if (campoEmail) campoEmail.style.borderColor = "";
+
+            const raInput = campoRa ? campoRa.value : "";
+            const email = campoEmail ? campoEmail.value.trim() : "";
+
+            try {
+                validarRA(raInput);
+            } catch (erroRa) {
+                destacarErro("recuperar-ra");
+                throw erroRa;
+            }
+
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                destacarErro("recuperar-email");
+                throw new Error("Informe um e-mail válido.");
+            }
+
+            await api("/recuperar-senha", { RA: normalizarRA(raInput), email });
+            mensagem(
+                "mensagem-recuperar",
+                "Se os dados estiverem corretos, enviamos um link de redefinição para o seu e-mail.",
+                "sucesso"
+            );
+        });
+    });
+}
+
 // Botão de fazer login (exige RA válido e senha preenchida)
 const btnLogin = porId("btn-login");
 if (btnLogin) {
@@ -462,7 +636,7 @@ if (btnLogin) {
             const senha = porId("login-senha") ? porId("login-senha").value : "";
 
             try {
-                validarRA(raInput);
+                validarRACompleto(raInput);
             } catch (erroRa) {
                 destacarErro("login-ra");
                 throw erroRa;
@@ -495,13 +669,16 @@ if (btnCadastrar) {
             const emailResp = porId("responsavel-email") ? porId("responsavel-email").value.trim() : "";
 
             // Validações que destacam o campo exato em vermelho se falhar
-            if (!nome || nome.length < 3) {
+            // Nome completo obrigatório: pelo menos nome + sobrenome (2 palavras com 2+ letras)
+            const partesNome = nome.split(/\s+/).filter(p => p.length >= 2);
+            if (!nome || partesNome.length < 2) {
                 destacarErro("cadastro-nome");
-                throw new Error("Preencha o nome completo do aluno (mínimo de 3 letras).");
+                throw new Error("Preencha o nome completo (nome e sobrenome).");
             }
-            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            // E-mail obrigatório e só aceita Gmail ou Hotmail
+            if (!email || !/^[^\s@]+@(gmail\.com|hotmail\.com|hotmail\.com\.br)$/i.test(email)) {
                 destacarErro("cadastro-email");
-                throw new Error("Preencha um e-mail válido para o aluno.");
+                throw new Error("Use um e-mail @gmail.com ou @hotmail.com.");
             }
             try {
                 validarRA(raInput);
@@ -575,13 +752,36 @@ if (btnConfirmarSaida) {
     });
 }
 
-// Botão para confirmar o reconhecimento facial
+// Botão para reabrir a câmera caso tenha falhado
+const btnReabrirCamera = porId("btn-reabrir-camera");
+if (btnReabrirCamera) {
+    btnReabrirCamera.addEventListener("click", () => {
+        void abrirCamera();
+    });
+}
+
+// Botão para confirmar o reconhecimento facial (exige rosto na câmera)
 const btnCadastrarFacial = porId("btn-cadastrar-facial");
 if (btnCadastrarFacial) {
     btnCadastrarFacial.addEventListener("click", () => {
         void executar("mensagem-facial", async () => {
+            if (!estado.stream || !estado.cameraPronta) {
+                throw new Error("É obrigatório posicionar um rosto na câmera para confirmar.");
+            }
+
+            const foto = capturarFoto();
+            if (!foto) {
+                throw new Error("Não foi possível capturar a imagem do seu rosto.");
+            }
+
             const acao = estado.acaoFacial || { tipo: "entrada" };
-            await api("/presenca", { tipo: acao.tipo, motivo_saida: acao.motivo || "" });
+            const rota = acao.tipo === "cadastro" ? "/rosto" : "/presenca";
+            await api(rota, { tipo: acao.tipo, motivo_saida: acao.motivo || "", foto });
+
+            if (acao.tipo === "cadastro" && estado.aluno) {
+                estado.aluno.rosto_cadastrado = true;
+            }
+
             mostrarTela("tela-principal");
             const campoMotivo = porId("campo-motivo-saida");
             if (campoMotivo) campoMotivo.classList.add("escondida");

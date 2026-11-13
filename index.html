@@ -51,8 +51,8 @@
                     <input
                         type="text"
                         id="login-ra"
-                        placeholder="0000000000000-0"
-                        maxlength="20"
+                        placeholder="000000000000-0"
+                        maxlength="14"
                         autocomplete="username"
                         autocapitalize="characters"
                     >
@@ -103,6 +103,19 @@
                     >
                         Primeiro acesso: criar conta
                     </button>
+
+
+
+                    <!-- botao de esqueceu sua senha -->
+                    <button
+                        id="btn-esqueceu-senha"
+                        class="botao-texto"
+                        type="button"
+                    >
+                        Esqueceu sua senha?
+                    </button>
+
+
 
 
                     <!-- Botão de Pular Tela (Modo Teste) -->
@@ -161,7 +174,8 @@
                         <input
                             type="text"
                             id="cadastro-nome"
-                            placeholder="Digite seu nome"
+                            placeholder="Nome e sobrenome"
+                            required
                         >
 
                     </div>
@@ -195,8 +209,8 @@
                         <input
                             type="text"
                             id="cadastro-ra"
-                            placeholder="0000000000000-0"
-                            maxlength="20"
+                            placeholder="000000000000-0"
+                            maxlength="14"
                             autocomplete="username"
                             autocapitalize="characters"
                         >
@@ -302,6 +316,79 @@
                         Voltar para o login
                     </button>
 
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ========================================== -->
+        <!-- TELA DE RECUPERAR SENHA -->
+        <!-- ========================================== -->
+
+        <section
+            id="tela-recuperar"
+            class="tela escondida"
+        >
+
+            <div class="topbar">
+                <span class="marca">Controle Escolar</span>
+            </div>
+
+            <div class="conteudo">
+
+                <h1>Recuperar senha</h1>
+
+                <p class="subtitulo">
+                    Informe seu RA e o e-mail cadastrado para receber as instruções de redefinição.
+                </p>
+
+                <div class="campo">
+                    <label for="recuperar-ra">
+                        RA + dígito
+                    </label>
+                    <input
+                        type="text"
+                        id="recuperar-ra"
+                        placeholder="000000000000-0"
+                        maxlength="14"
+                        autocomplete="username"
+                        autocapitalize="characters"
+                    >
+                </div>
+
+                <div class="campo">
+                    <label for="recuperar-email">
+                        E-mail cadastrado
+                    </label>
+                    <input
+                        type="email"
+                        id="recuperar-email"
+                        placeholder="Digite seu e-mail"
+                        autocomplete="email"
+                    >
+                </div>
+
+                <button
+                    id="btn-enviar-recuperacao"
+                    class="botao-principal"
+                >
+                    Enviar link de recuperação
+                </button>
+
+                <p
+                    id="mensagem-recuperar"
+                    class="mensagem"
+                    role="status"
+                    aria-live="polite"
+                ></p>
+
+                <div class="opcoes">
+                    <button id="btn-voltar-login-recuperar" class="botao-secundario">
+                        Voltar para o login
+                    </button>
                 </div>
 
             </div>
