@@ -67,6 +67,15 @@ function validarRA(valor) {
     return ra;
 }
 
+// Exige o RA completo (12 números + 1 dígito = 13 números) - usado no login
+function validarRACompleto(valor) {
+    const ra = normalizarRA(valor);
+    if (!/^\d{13}$/.test(ra)) {
+        throw new Error("Preencha o RA completo (12 números + dígito).");
+    }
+    return ra;
+}
+
 // Função para formatar o RA colocando o hífen apenas quando todos os dígitos forem preenchidos
 function aplicarMascaraRA(event) {
     let input = event.target;
@@ -635,7 +644,7 @@ if (btnLogin) {
             const senha = porId("login-senha") ? porId("login-senha").value : "";
 
             try {
-                validarRA(raInput);
+                validarRACompleto(raInput);
             } catch (erroRa) {
                 destacarErro("login-ra");
                 throw erroRa;
